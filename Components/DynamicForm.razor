@@ -1,0 +1,91 @@
+@namespace WorkflowFormEngine.Components
+@using WorkflowFormEngine.WorkflowEngine
+@using WorkflowFormEngine.WorkflowEngine.Models
+@using WorkflowFormEngine.Services
+
+@inject OptionService OptionService
+
+@if (Step is not null)
+{
+    @foreach (var field in Step.Fields.OrderBy(f => f.Order))
+    {
+        @if (ConditionEvaluator.IsVisible(field.VisibleWhen, Context))
+        {
+            <div @key="field.Key">
+                <DynamicComponent Type="@Resolve(field.FieldType)"
+                                  Parameters="@Params(field)" />
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public StepDefinition Step    { get; set; } = default!;
+    [Parameter, EditorRequired] public FormContext    Context  { get; set; } = default!;
+    [Parameter] public EventCallback OnContextChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> ValidationErrors { get; set; }
+        = new Dictionary<string, IReadOnlyList<string>>();
+
+    private readonly DependencyGraph _graph = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Step is not null) _graph.Build(Step.Fields);
+    }
+
+    /// <summary>Returns keys of all currently visible fields (used by WorkflowPage for validation).</summary>
+    public IEnumerable<string> GetVisibleFieldKeys() =>
+        Step?.Fields
+            .Where(f => ConditionEvaluator.IsVisible(f.VisibleWhen, Context))
+            .Select(f => f.Key)
+        ?? [];
+
+    // ── Field type → component resolution ────────────────────────────────────
+    // To add a new field type: create XyzField.razor inheriting FieldComponentBase,
+    // then add one line here. Nothing else needs to change.
+    private static Type Resolve(string fieldType) => fieldType switch
+    {
+        "text"          => typeof(TextField),
+        "number"        => typeof(NumberField),
+        "select"        => typeof(SelectField),
+        "checkboxlist"  => typeof(CheckboxListField),
+        _ => throw new NotSupportedException($"Unknown fieldType '{fieldType}'.")
+    };
+
+    // ── Uniform parameter dictionary ──────────────────────────────────────────
+    private Dictionary<string, object?> Params(FieldDefinition field)
+    {
+        ValidationErrors.TryGetValue(field.Key, out var errs);
+        return new Dictionary<string, object?>
+        {
+            [nameof(FieldComponentBase.Field)]            = field,
+            [nameof(FieldComponentBase.Value)]            = Context.GetValue(field.Key),
+            [nameof(FieldComponentBase.OnValueChanged)]   = EventCallback.Factory.Create<object?>(
+                                                                this, v => OnFieldChanged(field.Key, v)),
+            [nameof(FieldComponentBase.FormContext)]      = Context,
+            [nameof(FieldComponentBase.OptionService)]    = OptionService,
+            [nameof(FieldComponentBase.ValidationErrors)] = errs ?? (IReadOnlyList<string>)[],
+        };
+    }
+
+    // ── Change handler ────────────────────────────────────────────────────────
+    private async Task OnFieldChanged(string key, object? value)
+    {
+        Context.SetValue(key, value);
+        foreach (var d in _graph.GetAllDownstream(key))
+            Context.Reset(d);
+        ClearHiddenFields();
+        await OnContextChanged.InvokeAsync();
+        StateHasChanged();
+    }
+
+    private void ClearHiddenFields()
+    {
+        if (Step is null) return;
+        foreach (var f in Step.Fields)
+            if (!ConditionEvaluator.IsVisible(f.VisibleWhen, Context))
+                Context.Reset(f.Key);
+    }
+}

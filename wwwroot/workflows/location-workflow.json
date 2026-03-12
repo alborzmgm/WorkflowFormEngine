@@ -1,0 +1,239 @@
+{
+  "workflowKey": "location-contact-workflow",
+  "name": "Location & Contact Workflow",
+  "steps": [
+    {
+      "stepKey": "location",
+      "title": "Location",
+      "fields": [
+        {
+          "key": "CountryId",
+          "label": "Country",
+          "fieldType": "select",
+          "dataSource": "Countries",
+          "required": true,
+          "order": 1,
+          "validationRules": [
+            { "type": "required", "message": "Please select a country." }
+          ]
+        },
+        {
+          "key": "CityId",
+          "label": "City",
+          "fieldType": "select",
+          "dataSource": "Cities",
+          "dependsOn": "CountryId",
+          "visibleWhen": { "field": "CountryId", "operator": "hasValue" },
+          "required": true,
+          "order": 2,
+          "validationRules": [
+            { "type": "required", "message": "Please select a city." }
+          ]
+        },
+        {
+          "key": "AddressLine1",
+          "label": "Address Line 1",
+          "fieldType": "text",
+          "placeholder": "123 Main Street",
+          "visibleWhen": { "field": "CountryId", "operator": "hasValue" },
+          "required": true,
+          "order": 3,
+          "validationRules": [
+            { "type": "required", "message": "Address is required." },
+            { "type": "minLength", "value": "5" },
+            { "type": "maxLength", "value": "150" }
+          ]
+        },
+        {
+          "key": "PostalCode",
+          "label": "Postal Code",
+          "fieldType": "text",
+          "placeholder": "e.g. 10001",
+          "visibleWhen": { "field": "CountryId", "operator": "hasValue" },
+          "required": false,
+          "order": 4,
+          "validationRules": [
+            {
+              "type": "regex",
+              "pattern": "^[A-Za-z0-9\\s\\-]{3,10}$",
+              "message": "Postal code must be 3-10 alphanumeric characters."
+            }
+          ]
+        },
+        {
+          "key": "StateTaxId",
+          "label": "State Tax ID",
+          "fieldType": "text",
+          "placeholder": "US entities only",
+          "visibleWhen": { "field": "CountryId", "operator": "equals", "value": "US" },
+          "required": false,
+          "order": 5,
+          "validationRules": [
+            { "type": "minLength", "value": "8" },
+            { "type": "maxLength", "value": "20" }
+          ]
+        },
+        {
+          "key": "Interests",
+          "label": "Areas of Interest",
+          "fieldType": "checkboxlist",
+          "dataSource": "Interests",
+          "dependsOn": "CountryId",
+          "visibleWhen": { "field": "CountryId", "operator": "hasValue" },
+          "required": true,
+          "order": 6,
+          "validationRules": [
+            { "type": "minItems", "value": "1", "message": "Please select at least one area of interest." },
+            { "type": "maxItems", "value": "4", "message": "Please choose no more than 4 areas of interest." }
+          ]
+        }
+      ]
+    },
+    {
+      "stepKey": "contact",
+      "title": "Contact",
+      "fields": [
+        {
+          "key": "FirstName",
+          "label": "First Name",
+          "fieldType": "text",
+          "placeholder": "Jane",
+          "required": true,
+          "order": 1,
+          "validationRules": [
+            { "type": "required" },
+            { "type": "minLength", "value": "2" },
+            { "type": "maxLength", "value": "50" }
+          ]
+        },
+        {
+          "key": "LastName",
+          "label": "Last Name",
+          "fieldType": "text",
+          "placeholder": "Doe",
+          "required": true,
+          "order": 2,
+          "validationRules": [
+            { "type": "required" },
+            { "type": "minLength", "value": "2" }
+          ]
+        },
+        {
+          "key": "Email",
+          "label": "Email Address",
+          "fieldType": "text",
+          "placeholder": "jane.doe@example.com",
+          "required": true,
+          "order": 3,
+          "validationRules": [
+            { "type": "required", "message": "Email address is required." },
+            { "type": "email",    "message": "Please enter a valid email address." }
+          ]
+        },
+        {
+          "key": "PhoneNumber",
+          "label": "Phone Number",
+          "fieldType": "text",
+          "placeholder": "+1 555 000 0000",
+          "required": false,
+          "order": 4,
+          "validationRules": [
+            {
+              "type": "regex",
+              "pattern": "^[\\+]?[\\d\\s\\-\\(\\)]{7,20}$",
+              "message": "Enter a valid phone number (7-20 digits)."
+            }
+          ]
+        },
+        {
+          "key": "PreferredContactMethods",
+          "label": "Preferred Contact Methods",
+          "fieldType": "checkboxlist",
+          "dataSource": "ContactMethods",
+          "required": true,
+          "order": 5,
+          "validationRules": [
+            { "type": "minItems", "value": "1", "message": "Please select at least one contact method." },
+            { "type": "maxItems", "value": "3", "message": "Please select no more than 3 contact methods." }
+          ]
+        },
+        {
+          "key": "CompanyName",
+          "label": "Company Name",
+          "fieldType": "text",
+          "placeholder": "Acme Corp (optional)",
+          "visibleWhen": { "field": "Email", "operator": "hasValue" },
+          "required": false,
+          "order": 6,
+          "validationRules": [
+            { "type": "maxLength", "value": "100" }
+          ]
+        }
+      ]
+    },
+    {
+      "stepKey": "preferences",
+      "title": "Preferences",
+      "fields": [
+        {
+          "key": "PrimaryInterest",
+          "label": "Primary Focus Area",
+          "fieldType": "select",
+          "dataSource": "PrimaryInterest",
+          "dependsOn": "Interests",
+          "required": true,
+          "order": 1,
+          "validationRules": [
+            { "type": "required", "message": "Please select your primary focus area." }
+          ]
+        },
+        {
+          "key": "PreferredContactTime",
+          "label": "Best Time to Contact",
+          "fieldType": "select",
+          "dataSource": "ContactTime",
+          "dependsOn": "PreferredContactMethods",
+          "required": true,
+          "order": 2,
+          "validationRules": [
+            { "type": "required", "message": "Please select a preferred contact time." }
+          ]
+        },
+        {
+          "key": "NotificationFrequency",
+          "label": "Notification Frequency",
+          "fieldType": "select",
+          "dataSource": "NotificationFrequency",
+          "required": true,
+          "order": 3,
+          "validationRules": [
+            { "type": "required", "message": "Please select how often you wish to be notified." }
+          ]
+        },
+        {
+          "key": "NewsletterOptIn",
+          "label": "Newsletter & Updates",
+          "fieldType": "checkboxlist",
+          "dataSource": "NewsletterTopics",
+          "visibleWhen": { "field": "NotificationFrequency", "operator": "hasValue" },
+          "required": false,
+          "order": 4,
+          "validationRules": [
+            { "type": "maxItems", "value": "3", "message": "Please select up to 3 newsletter topics." }
+          ]
+        },
+        {
+          "key": "AdditionalNotes",
+          "label": "Additional Notes",
+          "fieldType": "text",
+          "placeholder": "Anything else you'd like us to know…",
+          "required": false,
+          "order": 5,
+          "validationRules": [
+            { "type": "maxLength", "value": "500" }
+          ]
+        }
+      ]
+    }
+  ]
+}

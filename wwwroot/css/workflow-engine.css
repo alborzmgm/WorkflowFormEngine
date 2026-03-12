@@ -1,0 +1,445 @@
+/*
+ * workflow-engine.css  — v5
+ * Bootstrap 5 is the foundation. This file covers only:
+ *   1. Step progress bar with connecting lines
+ *   2. Checkbox list stable layout (no-jump fix)
+ *   3. Professional card / field accent styles
+ *   4. Shimmer animation
+ *   5. Submission summary
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. PAGE & NAVBAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+body {
+    background: #f0f2f5;
+    min-height: 100vh;
+}
+
+.wfe-navbar {
+    background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%);
+    padding: .85rem 0;
+    box-shadow: 0 2px 12px rgba(29, 78, 216, .35);
+}
+
+.wfe-navbar .navbar-brand {
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -.01em;
+}
+
+.wfe-navbar .wfe-step-counter {
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    border-radius: 20px;
+    padding: .25rem .85rem;
+    font-size: .82rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. STEP PROGRESS BAR — circles + connecting lines
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wfe-stepper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    margin-bottom: 2rem;
+    padding: 0 .5rem;
+    position: relative;
+}
+
+/* The connecting line lives behind the circles */
+.wfe-stepper-track {
+    position: absolute;
+    top: 19px; /* centre of the 38px circle */
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #dee2e6;
+    z-index: 0;
+    margin: 0 5%;
+}
+
+.wfe-stepper-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* Filled line segment for completed steps */
+.wfe-stepper-item::before {
+    content: "";
+    position: absolute;
+    top: 19px;
+    right: 50%;
+    left: -50%;
+    height: 2px;
+    background: #dee2e6;
+    z-index: 0;
+}
+.wfe-stepper-item:first-child::before { display: none; }
+
+.wfe-stepper-item--done::before  { background: #198754; }
+.wfe-stepper-item--active::before { background: #1a56db; }
+
+.wfe-stepper-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .82rem;
+    font-weight: 700;
+    border: 2px solid #dee2e6;
+    background: #fff;
+    color: #adb5bd;
+    transition: all .25s ease;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+.wfe-stepper-item--done .wfe-stepper-circle {
+    background: #198754;
+    border-color: #198754;
+    color: #fff;
+}
+
+.wfe-stepper-item--active .wfe-stepper-circle {
+    background: #1a56db;
+    border-color: #1a56db;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(26, 86, 219, .18);
+}
+
+.wfe-stepper-label {
+    margin-top: .45rem;
+    font-size: .78rem;
+    font-weight: 500;
+    color: #adb5bd;
+    line-height: 1.3;
+    max-width: 80px;
+}
+
+.wfe-stepper-item--done  .wfe-stepper-label { color: #198754; }
+.wfe-stepper-item--active .wfe-stepper-label { color: #1a56db; font-weight: 600; }
+
+/* Mobile — hide labels, keep circles */
+@media (max-width: 575px) {
+    .wfe-stepper-label { display: none; }
+    .wfe-stepper-circle { width: 32px; height: 32px; font-size: .75rem; }
+    .wfe-stepper-track  { top: 16px; }
+    .wfe-stepper-item::before { top: 16px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. FORM CARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wfe-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 24px rgba(0,0,0,.06);
+    overflow: hidden;
+}
+
+.wfe-card-header {
+    background: #fff;
+    border-bottom: 1px solid #f1f3f5;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.wfe-card-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1a56db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.wfe-card-header h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -.01em;
+}
+
+.wfe-card-header .wfe-step-subtitle {
+    font-size: .8rem;
+    color: #94a3b8;
+    margin: 0;
+    font-weight: 400;
+}
+
+.wfe-card-body {
+    background: #fff;
+    padding: 1.75rem 1.5rem;
+}
+
+.wfe-card-footer {
+    background: #fafbfc;
+    border-top: 1px solid #f1f3f5;
+    padding: 1rem 1.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. FORM FIELDS — professional styling
+   ═══════════════════════════════════════════════════════════════════════════ */
+.form-label {
+    font-size: .85rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: .4rem;
+}
+
+.form-control,
+.form-select {
+    border-color: #e2e8f0;
+    border-radius: 8px;
+    padding: .55rem .85rem;
+    font-size: .925rem;
+    color: #1e293b;
+    transition: border-color .15s, box-shadow .15s;
+    background-color: #fafbfc;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #1a56db;
+    box-shadow: 0 0 0 3px rgba(26, 86, 219, .12);
+    background-color: #fff;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: #dc3545;
+    background-color: #fff;
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, .12);
+}
+
+.form-control::placeholder { color: #cbd5e1; }
+
+.invalid-feedback {
+    font-size: .8rem;
+    color: #dc3545;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. CHECKBOX LIST — stable layout, zero jump on check
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wfe-checkbox-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .35rem;
+}
+
+@media (min-width: 576px) {
+    .wfe-checkbox-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.wfe-checkbox-item {
+    /*
+     * FIX: Every item always has padding + a 1.5px border (transparent when
+     * unchecked). Toggling the selected state only changes the *colour* of
+     * the border and background — never the size or spacing.
+     * Result: zero layout shift when checking / unchecking.
+     */
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem .75rem;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    user-select: none;
+    min-height: 42px; /* fixed height — further prevents jump */
+}
+
+.wfe-checkbox-item:hover {
+    background: #f0f5ff;
+    border-color: #bfdbfe;
+}
+
+.wfe-checkbox-item--checked {
+    background: #eff6ff;
+    border-color: #1a56db;
+}
+
+.wfe-checkbox-item .form-check-input {
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+    border-color: #94a3b8;
+    transition: background .12s, border-color .12s;
+}
+
+.wfe-checkbox-item .form-check-input:checked {
+    background-color: #1a56db;
+    border-color: #1a56db;
+}
+
+.wfe-checkbox-item .form-check-label {
+    font-size: .9rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.wfe-checkbox-item--checked .form-check-label {
+    color: #1e40af;
+}
+
+/* Scrollable container for long lists */
+.wfe-checkbox-scroll {
+    max-height: 270px;
+    overflow-y: auto;
+    padding-right: .25rem;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+/* Select All / Clear All toolbar */
+.wfe-checkbox-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding-top: .6rem;
+    margin-top: .5rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.wfe-checkbox-toolbar .btn-link {
+    font-size: .82rem;
+    padding: 0;
+    text-decoration: none;
+    color: #1a56db;
+    font-weight: 500;
+}
+
+.wfe-checkbox-toolbar .btn-link:hover { text-decoration: underline; }
+.wfe-checkbox-toolbar .divider { color: #cbd5e1; }
+
+/* Selected count badge */
+.wfe-checkbox-badge {
+    background: #1a56db;
+    color: #fff;
+    border-radius: 20px;
+    padding: .1rem .55rem;
+    font-size: .75rem;
+    font-weight: 700;
+    margin-left: .4rem;
+    vertical-align: middle;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. SHIMMER LOADING
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wfe-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: wfe-shimmer 1.4s infinite;
+    border-radius: 8px;
+}
+
+@keyframes wfe-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. BUTTONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.btn-primary {
+    background: #1a56db;
+    border-color: #1a56db;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: .5rem 1.25rem;
+    transition: background .15s, box-shadow .15s, transform .1s;
+}
+.btn-primary:hover {
+    background: #1648c0;
+    border-color: #1648c0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 86, 219, .35);
+}
+
+.btn-outline-secondary {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: .5rem 1.25rem;
+}
+
+.btn-success {
+    background: #059669;
+    border-color: #059669;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: .5rem 1.25rem;
+}
+.btn-success:hover {
+    background: #047857;
+    border-color: #047857;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, .35);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. ALERTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.alert-danger {
+    background: #fff5f5;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #dc2626;
+    border-radius: 8px;
+    color: #991b1b;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. SUBMISSION SUMMARY CARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wfe-summary-card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 24px rgba(0,0,0,.06);
+}
+
+.wfe-summary-header {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff;
+    padding: 1.25rem 1.5rem;
+}
+
+.wfe-summary-label {
+    font-weight: 600;
+    color: #64748b;
+    width: 38%;
+    font-size: .875rem;
+}

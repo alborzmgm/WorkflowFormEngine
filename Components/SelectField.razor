@@ -1,0 +1,83 @@
+@namespace WorkflowFormEngine.Components
+@inherits FieldComponentBase
+
+<div class="mb-3">
+    <label class="form-label" for="@_id">
+        @Field.Label
+        @if (Field.Required)
+        {
+            <span class="text-danger ms-1" title="Required">*</span>
+        }
+    </label>
+
+    @if (_loading)
+    {
+        <div class="wfe-shimmer" style="height:42px"></div>
+        <div class="form-text text-muted mt-1">
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Loading @Field.Label options…
+        </div>
+    }
+    else
+    {
+        <select id="@_id"
+                class="form-select @(HasErrors ? "is-invalid" : "")"
+                disabled="@IsDisabled"
+                @onchange="OnChange">
+            <option value="">— Select @Field.Label —</option>
+            @foreach (var opt in _options)
+            {
+                <option value="@opt.Value" selected="@(opt.Value == Value?.ToString())">
+                    @opt.Label
+                </option>
+            }
+        </select>
+        @if (IsDisabled && Field.DependsOn is not null)
+        {
+            <div class="form-text text-muted">
+                <i class="bi bi-arrow-up-circle me-1"></i>
+                Please select <strong>@Field.DependsOn</strong> first.
+            </div>
+        }
+        @if (HasErrors)
+        {
+            <div class="invalid-feedback d-block">
+                @foreach (var e in ValidationErrors)
+                {
+                    <div><i class="bi bi-exclamation-circle-fill me-1"></i>@e</div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private string                  _id      = string.Empty;
+    private IEnumerable<OptionItem> _options = [];
+    private bool                    _loading = false;
+    private object?                 _lastParent = new();
+
+    private bool HasErrors  => ValidationErrors.Count > 0;
+    private bool IsDisabled =>
+        Field.DependsOn is not null && !(FormContext?.HasValue(Field.DependsOn) ?? false);
+
+    protected override void OnInitialized() => _id = $"field-{Field.Key.ToLowerInvariant()}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Field.DataSource is null || OptionService is null || FormContext is null) return;
+        var parent = Field.DependsOn is not null ? FormContext.GetValue(Field.DependsOn) : null;
+        if (Equals(parent, _lastParent)) return;
+        _lastParent = parent;
+        _loading    = true;
+        StateHasChanged();
+        _options = await OptionService.GetOptionsAsync(Field.DataSource, FormContext);
+        _loading = false;
+    }
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        var v = e.Value?.ToString();
+        await OnValueChanged.InvokeAsync(string.IsNullOrEmpty(v) ? null : v);
+    }
+}
