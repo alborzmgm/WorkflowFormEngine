@@ -1,4 +1,19 @@
-# WorkflowFormEngine — v5 (.NET 10 + Blazor Server + Bootstrap 5)
+# WorkflowFormEngine — v6 (.NET 10 + Blazor Server + Bootstrap 5)
+
+## What's New in v6 — Declarative Step Metadata, Textarea Field & Correct List Conditions
+
+| Area | Change |
+|---|---|
+| **`StepDefinition`** | Added `Description` and `Icon` properties — step card header is now fully data-driven from JSON |
+| **`location-workflow.json`** | Each step now declares `"description"` and `"icon"` (Bootstrap Icons class); no UI hardcoding |
+| **`WorkflowPage.razor`** | Removed hardcoded `StepIcon` / `StepSubtitle` switch expressions; now reads `CurrentStep.Icon` and `CurrentStep.Description` |
+| **`TextareaField.razor`** | New field type — `<textarea>` supporting `rows`, `placeholder`, validation errors |
+| **`FieldDefinition`** | Added `Rows` property (default `4`) for `textarea` sizing; ignored by all other field types |
+| **`DynamicForm.Resolve()`** | Added `"textarea" => TextareaField` |
+| **`location-workflow.json`** | `AdditionalNotes` changed from `"text"` to `"textarea"` with `"rows": 4` |
+| **`ConditionEvaluator`** | Fixed: `hasValue`, `isEmpty`, and `contains` now handle `List<string>` explicitly instead of relying on `.ToString()` side-effects |
+
+---
 
 ## What's New in v5 — CheckboxList Support
 
@@ -13,6 +28,38 @@
 | **`location-workflow.json`** | Added `Interests` (checkboxlist, country-dependent, max 4) and `PreferredContactMethods` (checkboxlist, required, min 1, max 3) |
 | **`WorkflowPage` summary** | List values render as Bootstrap `badge` pills instead of raw `ToString()` |
 | **`workflow-engine.css`** | Added `.checkbox-list-scroll` and `.form-check--selected` |
+
+---
+
+## Declarative Step Metadata
+
+Each step in the workflow JSON now carries its own UI presentation metadata:
+
+```json
+{
+  "stepKey": "location",
+  "title": "Location",
+  "description": "Where are you located?",
+  "icon": "bi-geo-alt-fill",
+  "fields": [ ... ]
+}
+```
+
+`WorkflowPage.razor` reads `CurrentStep.Icon` and `CurrentStep.Description` directly — there is no switch expression or index-based mapping in the UI code. Adding or reordering steps requires only JSON changes.
+
+---
+
+## ConditionEvaluator — Correct List Handling
+
+The evaluator now explicitly branches on `List<string>` values instead of relying on `.ToString()` side-effects:
+
+| Operator | Scalar behaviour | List behaviour |
+|---|---|---|
+| `hasValue` | field is non-whitespace | list.Count > 0 |
+| `isEmpty` | field is whitespace/null | list.Count == 0 |
+| `contains` | string.Contains(target) | list.Any(v == target) |
+| `equals` | string equality | always false (scalar concept) |
+| `notEquals` | string inequality | always true |
 
 ---
 
@@ -67,6 +114,7 @@ Navigate to `https://localhost:5001/workflow`
 | fieldType | Component | Value type in FormContext |
 |---|---|---|
 | `text` | `TextField` | `string` |
+| `textarea` | `TextareaField` | `string` |
 | `number` | `NumberField` | `decimal` |
 | `select` | `SelectField` | `string` |
 | `checkboxlist` | `CheckboxListField` | `List<string>` |
@@ -89,11 +137,11 @@ Navigate to `https://localhost:5001/workflow`
 
 | operator | value needed? | description |
 |---|---|---|
-| `equals` | yes | field value == target |
-| `notEquals` | yes | field value != target |
-| `hasValue` | no | field is non-empty (works with List too) |
-| `isEmpty` | no | field is null/blank |
-| `contains` | yes | string contains substring |
+| `equals` | yes | field value == target (scalar only) |
+| `notEquals` | yes | field value != target (scalar only) |
+| `hasValue` | no | field is non-empty; list-aware |
+| `isEmpty` | no | field is null/blank; list-aware |
+| `contains` | yes | substring match (scalar) or item match (list) |
 | `greaterThan` | yes | numeric > value |
 | `lessThan` | yes | numeric < value |
 
@@ -101,32 +149,39 @@ Navigate to `https://localhost:5001/workflow`
 
 ```
 WorkflowFormEngine/
-├── WorkflowEngine/Models/     FieldDefinition, ValidationRule, ConditionRule, FormContext (List-aware)
-├── WorkflowEngine/            DependencyGraph, ConditionEvaluator, WorkflowLoader
+├── WorkflowEngine/Models/     FieldDefinition (+ Rows), StepDefinition (+ Description, Icon),
+│                              ValidationRule, ConditionRule, FormContext (List-aware)
+├── WorkflowEngine/            DependencyGraph, ConditionEvaluator (list-aware), WorkflowLoader
 ├── Providers/
 │   ├── IDataSourceProvider.cs
 │   ├── CountryProvider.cs
 │   ├── CityProvider.cs
-│   ├── ContactMethodsProvider.cs   NEW — "ContactMethods" key
-│   └── InterestsProvider.cs        NEW — "Interests" key, country-dependent
+│   ├── ContactMethodsProvider.cs
+│   ├── InterestsProvider.cs
+│   ├── PrimaryInterestProvider.cs
+│   ├── ContactTimeProvider.cs
+│   ├── NotificationFrequencyProvider.cs
+│   └── NewsletterTopicsProvider.cs
 ├── Services/
 │   ├── OptionService.cs
-│   └── ValidationService.cs        minItems / maxItems added
+│   └── ValidationService.cs
 ├── Components/
 │   ├── App.razor
 │   ├── Routes.razor
 │   ├── FieldComponentBase.cs
-│   ├── DynamicForm.razor           "checkboxlist" added to Resolve()
+│   ├── DynamicForm.razor           "textarea" added to Resolve()
 │   ├── TextField.razor
+│   ├── TextareaField.razor         NEW — multi-line text input
 │   ├── NumberField.razor
 │   ├── SelectField.razor
-│   └── CheckboxListField.razor     NEW
+│   └── CheckboxListField.razor
 ├── Pages/
-│   └── WorkflowPage.razor          badge rendering for List<string> values
+│   └── WorkflowPage.razor          step icon/description now from JSON
 ├── wwwroot/
-│   ├── css/workflow-engine.css     checkbox-list-scroll + form-check--selected
-│   └── workflows/location-workflow.json   Interests + PreferredContactMethods fields added
+│   ├── css/workflow-engine.css
+│   └── workflows/location-workflow.json   step icons/descriptions + textarea for AdditionalNotes
 ├── _Imports.razor
-├── Program.cs                      ContactMethodsProvider + InterestsProvider registered
+├── Program.cs
 └── WorkflowFormEngine.csproj       net10.0
 ```
+
