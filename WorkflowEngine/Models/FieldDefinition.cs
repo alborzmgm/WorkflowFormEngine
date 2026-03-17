@@ -29,4 +29,10 @@ public sealed class FieldDefinition
 
     public int     Order       { get; set; }
     public string? Placeholder { get; set; }
+
+    /// <summary>
+    /// Number of visible text rows for "textarea" field type. Defaults to 4.
+    /// Ignored by all other field types.
+    /// </summary>
+    public int Rows { get; set; } = 4;
 }

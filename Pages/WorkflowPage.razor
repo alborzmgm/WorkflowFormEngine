@@ -80,11 +80,11 @@ else
         <div class="wfe-card">
             <div class="wfe-card-header">
                 <div class="wfe-card-header-icon">
-                    <i class="bi @StepIcon"></i>
+                    <i class="bi @CurrentStep.Icon"></i>
                 </div>
                 <div>
                     <h5>@CurrentStep.Title</h5>
-                    <p class="wfe-step-subtitle">@StepSubtitle</p>
+                    <p class="wfe-step-subtitle">@CurrentStep.Description</p>
                 </div>
             </div>
 
@@ -195,23 +195,6 @@ else
         new Dictionary<string, IReadOnlyList<string>>();
 
     private StepDefinition CurrentStep => _workflow!.Steps[_currentStepIndex];
-
-    // Per-step icon and subtitle for the card header
-    private string StepIcon => _currentStepIndex switch
-    {
-        0 => "bi-geo-alt-fill",
-        1 => "bi-person-fill",
-        2 => "bi-sliders",
-        _ => "bi-pencil-square"
-    };
-
-    private string StepSubtitle => _currentStepIndex switch
-    {
-        0 => "Where are you located?",
-        1 => "How can we reach you?",
-        2 => "Customise your experience",
-        _ => "Complete the fields below"
-    };
 
     private int VisibleFieldCount =>
         _form?.GetVisibleFieldKeys().Count() ?? CurrentStep.Fields.Count;

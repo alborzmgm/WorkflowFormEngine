@@ -5,6 +5,8 @@
     {
       "stepKey": "location",
       "title": "Location",
+      "description": "Where are you located?",
+      "icon": "bi-geo-alt-fill",
       "fields": [
         {
           "key": "CountryId",
@@ -92,6 +94,8 @@
     {
       "stepKey": "contact",
       "title": "Contact",
+      "description": "How can we reach you?",
+      "icon": "bi-person-fill",
       "fields": [
         {
           "key": "FirstName",
@@ -174,6 +178,8 @@
     {
       "stepKey": "preferences",
       "title": "Preferences",
+      "description": "Customise your experience",
+      "icon": "bi-sliders",
       "fields": [
         {
           "key": "PrimaryInterest",
@@ -225,8 +231,9 @@
         {
           "key": "AdditionalNotes",
           "label": "Additional Notes",
-          "fieldType": "text",
+          "fieldType": "textarea",
           "placeholder": "Anything else you'd like us to know…",
+          "rows": 4,
           "required": false,
           "order": 5,
           "validationRules": [
