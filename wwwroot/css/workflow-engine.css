@@ -443,3 +443,96 @@ body {
     width: 38%;
     font-size: .875rem;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REPEATER FIELD — card-per-row form layout
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.wfe-repeater-empty {
+    border: 2px dashed #e2e8f0;
+    border-radius: 10px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    background: #fafbfc;
+    color: #94a3b8;
+}
+
+.wfe-repeater-empty__icon {
+    display: block;
+    font-size: 2.25rem;
+    margin-bottom: .75rem;
+    opacity: .55;
+}
+
+/* ── Row card ────────────────────────────────────────────────────────────── */
+.wfe-rep-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: box-shadow .15s, border-color .15s;
+}
+
+.wfe-rep-card:hover {
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+}
+
+.wfe-rep-card--invalid {
+    border-color: #fca5a5;
+    background: #fffafa;
+}
+
+/* ── Card header ─────────────────────────────────────────────────────────── */
+.wfe-rep-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .65rem 1rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wfe-rep-card--invalid .wfe-rep-card__header {
+    background: #fff5f5;
+    border-bottom-color: #fecaca;
+}
+
+.wfe-rep-card__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #1a56db;
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.wfe-rep-card--invalid .wfe-rep-card__num {
+    background: #dc2626;
+}
+
+.wfe-rep-card__title {
+    font-size: .875rem;
+    font-weight: 500;
+    color: #475569;
+    flex: 1;
+    min-width: 0;
+}
+
+.wfe-rep-card__remove {
+    flex-shrink: 0;
+    font-size: .8rem;
+    padding: .25rem .6rem;
+}
+
+/* ── Card body ───────────────────────────────────────────────────────────── */
+.wfe-rep-card__body {
+    padding: 1.25rem 1rem 1rem;
+}

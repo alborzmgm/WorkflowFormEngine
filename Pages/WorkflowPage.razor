@@ -80,11 +80,11 @@ else
         <div class="wfe-card">
             <div class="wfe-card-header">
                 <div class="wfe-card-header-icon">
-                    <i class="bi @CurrentStep.Icon"></i>
+                    <i class="bi @StepIcon"></i>
                 </div>
                 <div>
                     <h5>@CurrentStep.Title</h5>
-                    <p class="wfe-step-subtitle">@CurrentStep.Description</p>
+                    <p class="wfe-step-subtitle">@StepSubtitle</p>
                 </div>
             </div>
 
@@ -95,6 +95,8 @@ else
                                      Step="@CurrentStep"
                                      Context="@_ctx"
                                      ValidationErrors="@_errors"
+                                     ValidationAttempted="@_validationAttempted"
+                                     ValidatedRowCounts="@_validatedRowCounts"
                                      OnContextChanged="OnContextChanged" />
                     </div>
                 </div>
@@ -156,7 +158,23 @@ else
                             <tr>
                                 <td class="wfe-summary-label ps-4">@kv.Key</td>
                                 <td>
-                                    @if (kv.Value is List<string> items && items.Count > 0)
+                                    @if (kv.Value is List<Dictionary<string, object?>> rows)
+                                    {
+                                        <table class="table table-sm table-bordered mb-0" style="font-size:.82rem">
+                                            <tbody>
+                                                @foreach (var row in rows)
+                                                {
+                                                    <tr>
+                                                        @foreach (var cell in row)
+                                                        {
+                                                            <td><strong class="text-muted me-1">@cell.Key:</strong>@cell.Value</td>
+                                                        }
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                    else if (kv.Value is List<string> items && items.Count > 0)
                                     {
                                         @foreach (var item in items)
                                         {
@@ -188,13 +206,35 @@ else
     private WorkflowDefinition? _workflow;
     private FormContext          _ctx              = new();
     private int                  _currentStepIndex = 0;
-    private bool                 _submitted        = false;
-    private DynamicForm?         _form;
+    private bool                            _submitted            = false;
+    private bool                            _validationAttempted  = false;
+    private IReadOnlyDictionary<string, int> _validatedRowCounts  =
+        new Dictionary<string, int>();
+    private DynamicForm?                    _form;
 
     private IReadOnlyDictionary<string, IReadOnlyList<string>> _errors =
         new Dictionary<string, IReadOnlyList<string>>();
 
     private StepDefinition CurrentStep => _workflow!.Steps[_currentStepIndex];
+
+    // Per-step icon and subtitle for the card header
+    private string StepIcon => _currentStepIndex switch
+    {
+        0 => "bi-geo-alt-fill",
+        1 => "bi-person-fill",
+        2 => "bi-sliders",
+        3 => "bi-cart-fill",
+        _ => "bi-pencil-square"
+    };
+
+    private string StepSubtitle => _currentStepIndex switch
+    {
+        0 => "Where are you located?",
+        1 => "How can we reach you?",
+        2 => "Customise your experience",
+        3 => "Add the products you wish to order",
+        _ => "Complete the fields below"
+    };
 
     private int VisibleFieldCount =>
         _form?.GetVisibleFieldKeys().Count() ?? CurrentStep.Fields.Count;
@@ -204,15 +244,20 @@ else
 
     private void OnContextChanged()
     {
-        if (_errors.Count > 0) RunValidation();
+        // Re-run validation live once the user has attempted Next/Submit.
+        // This clears both top-level and row-level errors as the user corrects them.
+        if (_validationAttempted) RunValidation();
         StateHasChanged();
     }
 
     private void Next()
     {
+        CaptureRowCounts();   // snapshot BEFORE validation — new rows added after this stay clean
         if (!RunValidation()) return;
         _currentStepIndex++;
-        _errors = new Dictionary<string, IReadOnlyList<string>>();
+        _errors               = new Dictionary<string, IReadOnlyList<string>>();
+        _validatedRowCounts   = new Dictionary<string, int>();
+        _validationAttempted  = false;
     }
 
     private void Back()
@@ -220,22 +265,74 @@ else
         if (_currentStepIndex > 0)
         {
             _currentStepIndex--;
-            _errors = new Dictionary<string, IReadOnlyList<string>>();
+            _errors               = new Dictionary<string, IReadOnlyList<string>>();
+            _validatedRowCounts   = new Dictionary<string, int>();
+            _validationAttempted  = false;
         }
     }
 
     private async Task Submit()
     {
+        CaptureRowCounts();   // snapshot BEFORE validation — new rows added after this stay clean
         if (!RunValidation()) return;
         _submitted = true;
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Captures the current row count for every repeater on this step.
+    /// MUST be called before RunValidation() in explicit Next/Submit actions.
+    /// Never called from OnContextChanged so that rows added after the last
+    /// Next/Submit click do not inherit the snapshot and show premature errors.
+    /// </summary>
+    private void CaptureRowCounts()
+    {
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var field in CurrentStep.Fields.Where(f => f.FieldType == "repeater"))
+        {
+            var rows = _ctx.GetValue(field.Key) as List<Dictionary<string, object?>>;
+            counts[field.Key] = rows?.Count ?? 0;
+        }
+        _validatedRowCounts = counts;
+    }
+
     private bool RunValidation()
     {
-        var visible = _form?.GetVisibleFieldKeys()
-                     ?? CurrentStep.Fields.Select(f => f.Key);
-        _errors = ValidationService.ValidateStep(CurrentStep, _ctx, visible);
-        return _errors.Count == 0;
+        _validationAttempted = true;
+
+        var visible = (_form?.GetVisibleFieldKeys()
+                      ?? CurrentStep.Fields.Select(f => f.Key)).ToList();
+
+        var errors = new Dictionary<string, IReadOnlyList<string>>(
+            ValidationService.ValidateStep(CurrentStep, _ctx, visible),
+            StringComparer.OrdinalIgnoreCase);
+
+        // Also validate sub-fields for every visible repeater.
+        // Filter errors to only rows within the snapshot taken by CaptureRowCounts()
+        // so that rows added after the last explicit Next/Submit stay error-free.
+        var hasRowErrors = false;
+        foreach (var field in CurrentStep.Fields
+                     .Where(f => f.FieldType == "repeater" && visible.Contains(f.Key)))
+        {
+            var snapshotCount = _validatedRowCounts.TryGetValue(field.Key, out var sc) ? sc : 0;
+
+            if (_ctx.GetValue(field.Key) is List<Dictionary<string, object?>> rows)
+            {
+                var rowErrs = ValidationService
+                    .ValidateRepeaterRows(field, rows)
+                    .Where(kv => kv.Key < snapshotCount)
+                    .ToDictionary(k => k.Key, v => v.Value);
+
+                if (rowErrs.Count > 0)
+                {
+                    hasRowErrors = true;
+                    if (!errors.ContainsKey(field.Key))
+                        errors[field.Key] = [$"One or more {field.Label} rows have invalid fields. Please correct them below."];
+                }
+            }
+        }
+
+        _errors = errors;
+        return errors.Count == 0 && !hasRowErrors;
     }
 }

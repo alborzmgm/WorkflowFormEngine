@@ -28,6 +28,7 @@ builder.Services.AddScoped<IDataSourceProvider, PrimaryInterestProvider>();
 builder.Services.AddScoped<IDataSourceProvider, ContactTimeProvider>();
 builder.Services.AddScoped<IDataSourceProvider, NotificationFrequencyProvider>();
 builder.Services.AddScoped<IDataSourceProvider, NewsletterTopicsProvider>();
+builder.Services.AddScoped<IDataSourceProvider, ProductCategoryProvider>();
 
 // ── Option Service ────────────────────────────────────────────────────────────
 builder.Services.AddScoped<OptionService>();

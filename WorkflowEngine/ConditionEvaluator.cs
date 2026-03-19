@@ -11,46 +11,24 @@ public static class ConditionEvaluator
     /// <summary>
     /// Returns true when the field should be visible.
     /// A null condition always returns true (no rule = always visible).
-    ///
-    /// List fields (CheckboxListField) are handled explicitly:
-    ///   hasValue / isEmpty  — delegate to FormContext.HasValue which is list-aware.
-    ///   contains            — checks whether the list contains the target value.
-    ///   equals / notEquals  — unsupported on list fields; always return false / true.
     /// </summary>
     public static bool IsVisible(ConditionRule? condition, FormContext context)
     {
         if (condition is null) return true;
 
-        var raw    = context.GetValue(condition.Field);
+        var raw    = context.GetValue(condition.Field)?.ToString() ?? string.Empty;
         var target = condition.Value ?? string.Empty;
-
-        // For list-valued fields (CheckboxListField), route operators correctly.
-        if (raw is List<string> list)
-        {
-            return condition.Operator.ToLowerInvariant() switch
-            {
-                "hasvalue"  => list.Count > 0,
-                "isempty"   => list.Count == 0,
-                "contains"  => list.Any(v => string.Equals(v, target, StringComparison.OrdinalIgnoreCase)),
-                "equals"    => false,   // list ≠ scalar by definition
-                "notequals" => true,
-                _ => throw new NotSupportedException(
-                         $"Operator '{condition.Operator}' is not supported for list-valued fields.")
-            };
-        }
-
-        var str = raw?.ToString() ?? string.Empty;
 
         return condition.Operator.ToLowerInvariant() switch
         {
-            "equals"      => string.Equals(str, target, StringComparison.OrdinalIgnoreCase),
-            "notequals"   => !string.Equals(str, target, StringComparison.OrdinalIgnoreCase),
-            "hasvalue"    => !string.IsNullOrWhiteSpace(str),
-            "isempty"     => string.IsNullOrWhiteSpace(str),
-            "contains"    => str.Contains(target, StringComparison.OrdinalIgnoreCase),
-            "greaterthan" => decimal.TryParse(str, out var a) &&
+            "equals"      => string.Equals(raw, target, StringComparison.OrdinalIgnoreCase),
+            "notequals"   => !string.Equals(raw, target, StringComparison.OrdinalIgnoreCase),
+            "hasvalue"    => !string.IsNullOrWhiteSpace(raw),
+            "isempty"     => string.IsNullOrWhiteSpace(raw),
+            "contains"    => raw.Contains(target, StringComparison.OrdinalIgnoreCase),
+            "greaterthan" => decimal.TryParse(raw, out var a) &&
                              decimal.TryParse(target, out var b) && a > b,
-            "lessthan"    => decimal.TryParse(str, out var c) &&
+            "lessthan"    => decimal.TryParse(raw, out var c) &&
                              decimal.TryParse(target, out var d) && c < d,
             _ => throw new NotSupportedException(
                      $"Unknown ConditionRule operator '{condition.Operator}'.")

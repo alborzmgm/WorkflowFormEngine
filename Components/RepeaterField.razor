@@ -1,0 +1,361 @@
+@namespace WorkflowFormEngine.Components
+@inherits FieldComponentBase
+
+@inject ValidationService ValidationService
+
+<div class="mb-4">
+
+    @* ── Header row: title + Add button ──────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0 fw-semibold fs-6">
+                @Field.Label
+                @if (Field.Required)
+                {
+                    <span class="text-danger ms-1">*</span>
+                }
+            </label>
+            @if (_rows.Count > 0)
+            {
+                <span class="badge bg-primary rounded-pill">
+                    @_rows.Count @(Field.Label)@(_rows.Count == 1 ? "" : "s")
+                </span>
+            }
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" @onclick="AddRow">
+            <i class="bi bi-plus-circle me-1"></i>Add @Field.Label
+        </button>
+    </div>
+
+    @* ── Top-level validation (minRows / maxRows / required) ─────────────── *@
+    @if (ValidationErrors.Count > 0)
+    {
+        <div class="alert alert-danger py-2 px-3 mb-3" role="alert">
+            @foreach (var e in ValidationErrors)
+            {
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>@e
+                </div>
+            }
+        </div>
+    }
+
+    @* ── Empty state ──────────────────────────────────────────────────────── *@
+    @if (_rows.Count == 0)
+    {
+        <div class="wfe-repeater-empty">
+            <i class="bi bi-inbox wfe-repeater-empty__icon"></i>
+            <p class="mb-1 fw-semibold">No @Field.Label entries yet</p>
+            <p class="mb-0 text-muted" style="font-size:.875rem">
+                Click <strong>Add @Field.Label</strong> to add the first entry.
+            </p>
+        </div>
+    }
+
+    @* ── One card per row ─────────────────────────────────────────────────── *@
+    @for (int ri = 0; ri < _rows.Count; ri++)
+    {
+        var rowIndex = ri;
+        var row      = _rows[rowIndex];
+        var rowErrs  = RowErrors.TryGetValue(rowIndex, out var re)
+                       ? re
+                       : (IReadOnlyDictionary<string, IReadOnlyList<string>>)
+                         new Dictionary<string, IReadOnlyList<string>>();
+        var hasRowErr = rowErrs.Count > 0;
+
+        @* Derive a card sub-title from key cells when they have values *@
+        var cardTitle = BuildCardTitle(row, rowIndex);
+
+        <div class="wfe-rep-card @(hasRowErr ? "wfe-rep-card--invalid" : "")"
+             @key="rowIndex">
+
+            @* Card header *@
+            <div class="wfe-rep-card__header">
+                <div class="d-flex align-items-center gap-2 min-w-0">
+                    <span class="wfe-rep-card__num">@(rowIndex + 1)</span>
+                    <span class="wfe-rep-card__title text-truncate">@cardTitle</span>
+                    @if (hasRowErr)
+                    {
+                        <span class="badge bg-danger ms-1">
+                            @rowErrs.Values.Sum(e => e.Count) error@(rowErrs.Values.Sum(e => e.Count) == 1 ? "" : "s")
+                        </span>
+                    }
+                </div>
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger wfe-rep-card__remove"
+                        title="Remove @Field.Label @(rowIndex + 1)"
+                        @onclick="() => RemoveRow(rowIndex)">
+                    <i class="bi bi-trash3"></i>
+                    <span class="d-none d-sm-inline ms-1">Remove</span>
+                </button>
+            </div>
+
+            @* Card body — sub-fields as a responsive form grid *@
+            <div class="wfe-rep-card__body">
+                <div class="row g-3">
+                    @foreach (var sub in Field.SubFields.OrderBy(s => s.Order))
+                    {
+                        var subKey   = sub.Key;
+                        var cellVal  = row.TryGetValue(subKey, out var cv) ? cv : null;
+                        var cellErrs = rowErrs.TryGetValue(subKey, out var ce)
+                                       ? ce
+                                       : (IReadOnlyList<string>)[];
+                        var colCss   = WidthToCss(sub.Width);
+
+                        <div class="@colCss">
+                            <label class="form-label" for="@CellId(rowIndex, subKey)">
+                                @sub.Label
+                                @if (sub.Required)
+                                {
+                                    <span class="text-danger ms-1">*</span>
+                                }
+                            </label>
+
+                            @RenderInput(sub, rowIndex, cellVal, cellErrs)
+
+                            @if (cellErrs.Count > 0)
+                            {
+                                <div class="invalid-feedback d-block">
+                                    @foreach (var err in cellErrs)
+                                    {
+                                        <div>
+                                            <i class="bi bi-exclamation-circle-fill me-1"></i>@err
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ── Bottom Add button (convenient when many rows already exist) ───────── *@
+    @if (_rows.Count > 0)
+    {
+        <div class="d-flex justify-content-center mt-2">
+            <button type="button"
+                    class="btn btn-outline-primary btn-sm"
+                    @onclick="AddRow">
+                <i class="bi bi-plus-circle me-1"></i>Add another @Field.Label
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    // ── State ─────────────────────────────────────────────────────────────────
+    private List<Dictionary<string, object?>> _rows        = [];
+    private bool                              _initialized = false;
+    private readonly Dictionary<string, List<OptionItem>> _optCache = new();
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    protected override void OnInitialized() => SyncFromContext();
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (!_initialized)
+        {
+            SyncFromContext();
+            _initialized = true;
+        }
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Pre-load options for any select sub-fields.
+        bool changed = false;
+        foreach (var sub in Field.SubFields.Where(s =>
+                     s.FieldType == "select" && s.DataSource is not null))
+        {
+            if (_optCache.ContainsKey(sub.Key)) continue;
+            if (OptionService is not null && FormContext is not null)
+            {
+                var opts = await OptionService.GetOptionsAsync(sub.DataSource!, FormContext);
+                _optCache[sub.Key] = [.. opts];
+                changed = true;
+            }
+        }
+
+        if (changed) StateHasChanged();
+    }
+
+    // ── Row management ────────────────────────────────────────────────────────
+    private async Task AddRow()
+    {
+        var blank = Field.SubFields.ToDictionary(
+            sf => sf.Key,
+            _ => (object?)null,
+            StringComparer.OrdinalIgnoreCase);
+        _rows.Add(blank);
+        await PushValue();
+    }
+
+    private async Task RemoveRow(int idx)
+    {
+        if (idx >= 0 && idx < _rows.Count)
+        {
+            _rows.RemoveAt(idx);
+            await PushValue();
+        }
+    }
+
+    private async Task OnCellChanged(int rowIdx, string subKey, object? value)
+    {
+        if (rowIdx < 0 || rowIdx >= _rows.Count) return;
+        _rows[rowIdx][subKey] = value;
+        await PushValue();
+        // Re-render so the card title updates immediately
+        StateHasChanged();
+    }
+
+    private async Task PushValue()
+    {
+        var payload = _rows.Count > 0
+            ? (object?)_rows.Select(r => new Dictionary<string, object?>(r)).ToList()
+            : null;
+        await OnValueChanged.InvokeAsync(payload);
+    }
+
+    private void SyncFromContext()
+    {
+        _rows = Value is List<Dictionary<string, object?>> saved
+            ? saved.Select(r => new Dictionary<string, object?>(r)).ToList()
+            : [];
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private string CellId(int rowIdx, string subKey) =>
+        $"rep-{Field.Key}-{rowIdx}-{subKey}".ToLowerInvariant();
+
+    /// <summary>
+    /// Builds the card header subtitle from the first meaningful text values
+    /// in the row (e.g. "PRD-001 — Wireless Keyboard").
+    /// Falls back to a generic label when no values are filled yet.
+    /// </summary>
+    private string BuildCardTitle(Dictionary<string, object?> row, int rowIdx)
+    {
+        var parts = row.Values
+            .Where(v => v is string s && !string.IsNullOrWhiteSpace(s))
+            .Cast<string>()
+            .Take(2)
+            .ToList();
+
+        return parts.Count > 0
+            ? string.Join(" — ", parts)
+            : $"New {Field.Label}";
+    }
+
+    /// <summary>Maps the Width JSON property to a Bootstrap column CSS class.</summary>
+    private static string WidthToCss(string width) => width?.ToLowerInvariant() switch
+    {
+        "full"       => "col-12",
+        "two-thirds" => "col-12 col-sm-8",
+        "half"       => "col-12 col-sm-6",
+        "third"      => "col-12 col-sm-4",
+        "quarter"    => "col-12 col-sm-3",
+        _            => "col-12 col-sm-6"   // default: half
+    };
+
+    // ── Input renderer ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Renders the correct input element for a sub-field using RenderFragment.
+    /// Supports: text | number | date | select
+    /// </summary>
+    private RenderFragment RenderInput(
+        FieldDefinition sub,
+        int rowIdx,
+        object? value,
+        IReadOnlyList<string> errors) => builder =>
+    {
+        var hasErr  = errors.Count > 0;
+        var strVal  = value?.ToString() ?? string.Empty;
+        var inputId = CellId(rowIdx, sub.Key);
+        var errCss  = hasErr ? " is-invalid" : "";
+
+        switch (sub.FieldType)
+        {
+            case "select":
+            {
+                var opts = _optCache.TryGetValue(sub.Key, out var cached) ? cached : [];
+                builder.OpenElement(0, "select");
+                builder.AddAttribute(1, "id", inputId);
+                builder.AddAttribute(2, "class", $"form-select{errCss}");
+                builder.AddAttribute(3, "onchange",
+                    EventCallback.Factory.Create<ChangeEventArgs>(this,
+                        e =>
+                        {
+                            var v = e.Value?.ToString();
+                            return OnCellChanged(rowIdx, sub.Key,
+                                string.IsNullOrEmpty(v) ? null : v);
+                        }));
+
+                builder.OpenElement(10, "option");
+                builder.AddAttribute(11, "value", "");
+                builder.AddContent(12, "— Select —");
+                builder.CloseElement();
+
+                foreach (var opt in opts)
+                {
+                    builder.OpenElement(20, "option");
+                    builder.AddAttribute(21, "value", opt.Value);
+                    if (opt.Value == strVal) builder.AddAttribute(22, "selected", true);
+                    builder.AddContent(23, opt.Label);
+                    builder.CloseElement();
+                }
+
+                builder.CloseElement(); // select
+                break;
+            }
+
+            case "date":
+                builder.OpenElement(0, "input");
+                builder.AddAttribute(1, "id", inputId);
+                builder.AddAttribute(2, "type", "date");
+                builder.AddAttribute(3, "class", $"form-control{errCss}");
+                builder.AddAttribute(4, "value", strVal);
+                builder.AddAttribute(5, "onchange",
+                    EventCallback.Factory.Create<ChangeEventArgs>(this,
+                        e => OnCellChanged(rowIdx, sub.Key, e.Value?.ToString())));
+                builder.CloseElement();
+                break;
+
+            case "number":
+                builder.OpenElement(0, "input");
+                builder.AddAttribute(1, "id", inputId);
+                builder.AddAttribute(2, "type", "number");
+                builder.AddAttribute(3, "class", $"form-control{errCss}");
+                builder.AddAttribute(4, "value", strVal);
+                builder.AddAttribute(5, "placeholder", sub.Placeholder ?? "0");
+                builder.AddAttribute(6, "oninput",
+                    EventCallback.Factory.Create<ChangeEventArgs>(this,
+                        e =>
+                        {
+                            var raw = e.Value?.ToString();
+                            return OnCellChanged(rowIdx, sub.Key,
+                                decimal.TryParse(raw, out var n) ? n : (object?)null);
+                        }));
+                builder.CloseElement();
+                break;
+
+            default: // text
+                builder.OpenElement(0, "input");
+                builder.AddAttribute(1, "id", inputId);
+                builder.AddAttribute(2, "type", "text");
+                builder.AddAttribute(3, "class", $"form-control{errCss}");
+                builder.AddAttribute(4, "value", strVal);
+                builder.AddAttribute(5, "placeholder", sub.Placeholder ?? "");
+                builder.AddAttribute(6, "oninput",
+                    EventCallback.Factory.Create<ChangeEventArgs>(this,
+                        e => OnCellChanged(rowIdx, sub.Key, e.Value)));
+                builder.CloseElement();
+                break;
+        }
+    };
+}

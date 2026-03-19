@@ -5,8 +5,6 @@
     {
       "stepKey": "location",
       "title": "Location",
-      "description": "Where are you located?",
-      "icon": "bi-geo-alt-fill",
       "fields": [
         {
           "key": "CountryId",
@@ -16,7 +14,10 @@
           "required": true,
           "order": 1,
           "validationRules": [
-            { "type": "required", "message": "Please select a country." }
+            {
+              "type": "required",
+              "message": "Please select a country."
+            }
           ]
         },
         {
@@ -25,11 +26,17 @@
           "fieldType": "select",
           "dataSource": "Cities",
           "dependsOn": "CountryId",
-          "visibleWhen": { "field": "CountryId", "operator": "hasValue" },
+          "visibleWhen": {
+            "field": "CountryId",
+            "operator": "hasValue"
+          },
           "required": true,
           "order": 2,
           "validationRules": [
-            { "type": "required", "message": "Please select a city." }
+            {
+              "type": "required",
+              "message": "Please select a city."
+            }
           ]
         },
         {
@@ -37,13 +44,25 @@
           "label": "Address Line 1",
           "fieldType": "text",
           "placeholder": "123 Main Street",
-          "visibleWhen": { "field": "CountryId", "operator": "hasValue" },
+          "visibleWhen": {
+            "field": "CountryId",
+            "operator": "hasValue"
+          },
           "required": true,
           "order": 3,
           "validationRules": [
-            { "type": "required", "message": "Address is required." },
-            { "type": "minLength", "value": "5" },
-            { "type": "maxLength", "value": "150" }
+            {
+              "type": "required",
+              "message": "Address is required."
+            },
+            {
+              "type": "minLength",
+              "value": "5"
+            },
+            {
+              "type": "maxLength",
+              "value": "150"
+            }
           ]
         },
         {
@@ -51,7 +70,10 @@
           "label": "Postal Code",
           "fieldType": "text",
           "placeholder": "e.g. 10001",
-          "visibleWhen": { "field": "CountryId", "operator": "hasValue" },
+          "visibleWhen": {
+            "field": "CountryId",
+            "operator": "hasValue"
+          },
           "required": false,
           "order": 4,
           "validationRules": [
@@ -67,12 +89,22 @@
           "label": "State Tax ID",
           "fieldType": "text",
           "placeholder": "US entities only",
-          "visibleWhen": { "field": "CountryId", "operator": "equals", "value": "US" },
+          "visibleWhen": {
+            "field": "CountryId",
+            "operator": "equals",
+            "value": "US"
+          },
           "required": false,
           "order": 5,
           "validationRules": [
-            { "type": "minLength", "value": "8" },
-            { "type": "maxLength", "value": "20" }
+            {
+              "type": "minLength",
+              "value": "8"
+            },
+            {
+              "type": "maxLength",
+              "value": "20"
+            }
           ]
         },
         {
@@ -81,12 +113,23 @@
           "fieldType": "checkboxlist",
           "dataSource": "Interests",
           "dependsOn": "CountryId",
-          "visibleWhen": { "field": "CountryId", "operator": "hasValue" },
+          "visibleWhen": {
+            "field": "CountryId",
+            "operator": "hasValue"
+          },
           "required": true,
           "order": 6,
           "validationRules": [
-            { "type": "minItems", "value": "1", "message": "Please select at least one area of interest." },
-            { "type": "maxItems", "value": "4", "message": "Please choose no more than 4 areas of interest." }
+            {
+              "type": "minItems",
+              "value": "1",
+              "message": "Please select at least one area of interest."
+            },
+            {
+              "type": "maxItems",
+              "value": "4",
+              "message": "Please choose no more than 4 areas of interest."
+            }
           ]
         }
       ]
@@ -94,8 +137,6 @@
     {
       "stepKey": "contact",
       "title": "Contact",
-      "description": "How can we reach you?",
-      "icon": "bi-person-fill",
       "fields": [
         {
           "key": "FirstName",
@@ -105,9 +146,17 @@
           "required": true,
           "order": 1,
           "validationRules": [
-            { "type": "required" },
-            { "type": "minLength", "value": "2" },
-            { "type": "maxLength", "value": "50" }
+            {
+              "type": "required"
+            },
+            {
+              "type": "minLength",
+              "value": "2"
+            },
+            {
+              "type": "maxLength",
+              "value": "50"
+            }
           ]
         },
         {
@@ -118,8 +167,13 @@
           "required": true,
           "order": 2,
           "validationRules": [
-            { "type": "required" },
-            { "type": "minLength", "value": "2" }
+            {
+              "type": "required"
+            },
+            {
+              "type": "minLength",
+              "value": "2"
+            }
           ]
         },
         {
@@ -130,8 +184,14 @@
           "required": true,
           "order": 3,
           "validationRules": [
-            { "type": "required", "message": "Email address is required." },
-            { "type": "email",    "message": "Please enter a valid email address." }
+            {
+              "type": "required",
+              "message": "Email address is required."
+            },
+            {
+              "type": "email",
+              "message": "Please enter a valid email address."
+            }
           ]
         },
         {
@@ -157,8 +217,16 @@
           "required": true,
           "order": 5,
           "validationRules": [
-            { "type": "minItems", "value": "1", "message": "Please select at least one contact method." },
-            { "type": "maxItems", "value": "3", "message": "Please select no more than 3 contact methods." }
+            {
+              "type": "minItems",
+              "value": "1",
+              "message": "Please select at least one contact method."
+            },
+            {
+              "type": "maxItems",
+              "value": "3",
+              "message": "Please select no more than 3 contact methods."
+            }
           ]
         },
         {
@@ -166,11 +234,17 @@
           "label": "Company Name",
           "fieldType": "text",
           "placeholder": "Acme Corp (optional)",
-          "visibleWhen": { "field": "Email", "operator": "hasValue" },
+          "visibleWhen": {
+            "field": "Email",
+            "operator": "hasValue"
+          },
           "required": false,
           "order": 6,
           "validationRules": [
-            { "type": "maxLength", "value": "100" }
+            {
+              "type": "maxLength",
+              "value": "100"
+            }
           ]
         }
       ]
@@ -178,8 +252,6 @@
     {
       "stepKey": "preferences",
       "title": "Preferences",
-      "description": "Customise your experience",
-      "icon": "bi-sliders",
       "fields": [
         {
           "key": "PrimaryInterest",
@@ -190,7 +262,10 @@
           "required": true,
           "order": 1,
           "validationRules": [
-            { "type": "required", "message": "Please select your primary focus area." }
+            {
+              "type": "required",
+              "message": "Please select your primary focus area."
+            }
           ]
         },
         {
@@ -202,7 +277,10 @@
           "required": true,
           "order": 2,
           "validationRules": [
-            { "type": "required", "message": "Please select a preferred contact time." }
+            {
+              "type": "required",
+              "message": "Please select a preferred contact time."
+            }
           ]
         },
         {
@@ -213,7 +291,10 @@
           "required": true,
           "order": 3,
           "validationRules": [
-            { "type": "required", "message": "Please select how often you wish to be notified." }
+            {
+              "type": "required",
+              "message": "Please select how often you wish to be notified."
+            }
           ]
         },
         {
@@ -221,23 +302,231 @@
           "label": "Newsletter & Updates",
           "fieldType": "checkboxlist",
           "dataSource": "NewsletterTopics",
-          "visibleWhen": { "field": "NotificationFrequency", "operator": "hasValue" },
+          "visibleWhen": {
+            "field": "NotificationFrequency",
+            "operator": "hasValue"
+          },
           "required": false,
           "order": 4,
           "validationRules": [
-            { "type": "maxItems", "value": "3", "message": "Please select up to 3 newsletter topics." }
+            {
+              "type": "maxItems",
+              "value": "3",
+              "message": "Please select up to 3 newsletter topics."
+            }
           ]
         },
         {
           "key": "AdditionalNotes",
           "label": "Additional Notes",
-          "fieldType": "textarea",
-          "placeholder": "Anything else you'd like us to know…",
-          "rows": 4,
+          "fieldType": "text",
+          "placeholder": "Anything else you'd like us to know\u2026",
           "required": false,
           "order": 5,
           "validationRules": [
-            { "type": "maxLength", "value": "500" }
+            {
+              "type": "maxLength",
+              "value": "500"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stepKey": "order",
+      "title": "Order",
+      "fields": [
+        {
+          "key": "OrderReference",
+          "label": "Order Reference",
+          "fieldType": "text",
+          "placeholder": "e.g. ORD-2025-001",
+          "required": true,
+          "order": 1,
+          "validationRules": [
+            {
+              "type": "required",
+              "message": "An order reference is required."
+            },
+            {
+              "type": "minLength",
+              "value": "5",
+              "message": "Order reference must be at least 5 characters."
+            },
+            {
+              "type": "regex",
+              "pattern": "^ORD-\\d{4}-\\d{3,6}$",
+              "message": "Format must be ORD-YYYY-NNN (e.g. ORD-2025-001)."
+            }
+          ]
+        },
+        {
+          "key": "RequestedDeliveryDate",
+          "label": "Requested Delivery Date",
+          "fieldType": "date",
+          "required": true,
+          "order": 2,
+          "validationRules": [
+            {
+              "type": "required",
+              "message": "Please provide a requested delivery date."
+            }
+          ]
+        },
+        {
+          "key": "Products",
+          "label": "Product",
+          "fieldType": "repeater",
+          "required": true,
+          "order": 3,
+          "validationRules": [
+            {
+              "type": "minRows",
+              "value": "1",
+              "message": "Please add at least one product to your order."
+            },
+            {
+              "type": "maxRows",
+              "value": "20",
+              "message": "An order may contain at most 20 product lines."
+            }
+          ],
+          "subFields": [
+            {
+              "key": "ProductCode",
+              "label": "Product Code",
+              "fieldType": "text",
+              "placeholder": "PRD-001",
+              "required": true,
+              "order": 1,
+              "validationRules": [
+                {
+                  "type": "required",
+                  "message": "Product code is required."
+                },
+                {
+                  "type": "regex",
+                  "pattern": "^PRD-\\d{3,6}$",
+                  "message": "Format: PRD-NNN (e.g. PRD-001)."
+                }
+              ],
+              "width": "third"
+            },
+            {
+              "key": "ProductName",
+              "label": "Product Name",
+              "fieldType": "text",
+              "placeholder": "e.g. Wireless Keyboard",
+              "required": true,
+              "order": 2,
+              "validationRules": [
+                {
+                  "type": "required",
+                  "message": "Product name is required."
+                },
+                {
+                  "type": "minLength",
+                  "value": "2"
+                },
+                {
+                  "type": "maxLength",
+                  "value": "80"
+                }
+              ],
+              "width": "two-thirds"
+            },
+            {
+              "key": "Category",
+              "label": "Category",
+              "fieldType": "select",
+              "dataSource": "ProductCategories",
+              "required": true,
+              "order": 3,
+              "validationRules": [
+                {
+                  "type": "required",
+                  "message": "Please select a category."
+                }
+              ],
+              "width": "half"
+            },
+            {
+              "key": "Quantity",
+              "label": "Qty",
+              "fieldType": "number",
+              "placeholder": "1",
+              "required": true,
+              "order": 4,
+              "validationRules": [
+                {
+                  "type": "required",
+                  "message": "Quantity is required."
+                },
+                {
+                  "type": "min",
+                  "value": "1",
+                  "message": "Quantity must be at least 1."
+                },
+                {
+                  "type": "max",
+                  "value": "9999",
+                  "message": "Quantity cannot exceed 9999."
+                }
+              ],
+              "width": "quarter"
+            },
+            {
+              "key": "UnitPrice",
+              "label": "Unit Price",
+              "fieldType": "number",
+              "placeholder": "0.00",
+              "required": true,
+              "order": 5,
+              "validationRules": [
+                {
+                  "type": "required",
+                  "message": "Unit price is required."
+                },
+                {
+                  "type": "min",
+                  "value": "0.01",
+                  "message": "Price must be greater than 0."
+                }
+              ],
+              "width": "quarter"
+            },
+            {
+              "key": "DeliveryDate",
+              "label": "Delivery Date",
+              "fieldType": "date",
+              "required": true,
+              "order": 6,
+              "validationRules": [
+                {
+                  "type": "required",
+                  "message": "Delivery date is required."
+                }
+              ],
+              "width": "half"
+            }
+          ]
+        },
+        {
+          "key": "ShippingNotes",
+          "label": "Shipping Notes",
+          "fieldType": "text",
+          "placeholder": "Any special shipping instructions\u2026",
+          "visibleWhen": {
+            "field": "Products",
+            "operator": "hasValue"
+          },
+          "required": false,
+          "order": 4,
+          "validationRules": [
+            {
+              "type": "maxLength",
+              "value": "300"
+            }
           ]
         }
       ]

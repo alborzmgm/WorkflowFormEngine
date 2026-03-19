@@ -3,6 +3,12 @@ namespace WorkflowFormEngine.WorkflowEngine.Models;
 /// <summary>
 /// Runtime value bag for all field values in the current workflow session.
 /// Passed to IDataSourceProvider so dependent providers can filter by parent values.
+///
+/// Supported value types stored per field:
+///   string                              — text, select, date
+///   decimal                             — number
+///   List&lt;string&gt;                        — checkboxlist
+///   List&lt;Dictionary&lt;string, object?&gt;&gt;   — repeater
 /// </summary>
 public sealed class FormContext
 {
@@ -19,19 +25,21 @@ public sealed class FormContext
         _values.Remove(key);
 
     /// <summary>
-    /// Returns true when the key exists and has a meaningful value.
-    /// Handles both scalar values and List&lt;string&gt; (used by CheckboxListField).
+    /// Returns true when the key has a meaningful value.
+    /// Handles scalar strings, List&lt;string&gt; (checkboxlist), and
+    /// List&lt;Dictionary&gt; (repeater — at least one row with data).
     /// </summary>
     public bool HasValue(string key)
     {
         if (!_values.TryGetValue(key, out var val) || val is null)
             return false;
 
-        // Checkbox list stores its selections as List<string>
-        if (val is List<string> list)
-            return list.Count > 0;
-
-        return val.ToString() is { Length: > 0 };
+        return val switch
+        {
+            List<string> list                        => list.Count > 0,
+            List<Dictionary<string, object?>> rows   => rows.Count > 0,
+            _                                        => val.ToString() is { Length: > 0 }
+        };
     }
 
     public IReadOnlyDictionary<string, object?> AllValues => _values;

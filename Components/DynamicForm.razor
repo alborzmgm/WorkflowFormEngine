@@ -3,7 +3,8 @@
 @using WorkflowFormEngine.WorkflowEngine.Models
 @using WorkflowFormEngine.Services
 
-@inject OptionService OptionService
+@inject OptionService      OptionService
+@inject ValidationService  ValidationService
 
 @if (Step is not null)
 {
@@ -28,6 +29,34 @@
     public IReadOnlyDictionary<string, IReadOnlyList<string>> ValidationErrors { get; set; }
         = new Dictionary<string, IReadOnlyList<string>>();
 
+    /// <summary>
+    /// True once the user has clicked Next or Submit at least once on this step.
+    /// Enables row-level error computation. Reset to false when navigating steps.
+    /// </summary>
+    [Parameter]
+    public bool ValidationAttempted { get; set; }
+
+    /// <summary>
+    /// Snapshot of row counts per repeater, captured by WorkflowPage
+    /// at the exact moment the user clicks Next or Submit.
+    ///
+    /// WHY THIS IS HERE (not computed inside DynamicForm):
+    ///   After Next/Submit fails, _validationAttempted stays true so live
+    ///   re-validation can clear resolved errors as the user edits.
+    ///   But OnContextChanged also fires when the user clicks "Add Row",
+    ///   which triggers RunValidation() — a brand-new empty row is now
+    ///   present when ValidateRepeaterRows runs → errors appear immediately.
+    ///
+    ///   The fix: WorkflowPage captures row counts BEFORE validation
+    ///   runs in Next()/Submit() and passes them here. OnContextChanged
+    ///   live re-validation never updates this snapshot, so any row added
+    ///   after the last explicit Next/Submit has an index >= the snapshot
+    ///   count and is silently excluded from RowErrors.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, int> ValidatedRowCounts { get; set; }
+        = new Dictionary<string, int>();
+
     private readonly DependencyGraph _graph = new();
 
     protected override void OnParametersSet()
@@ -35,30 +64,51 @@
         if (Step is not null) _graph.Build(Step.Fields);
     }
 
-    /// <summary>Returns keys of all currently visible fields (used by WorkflowPage for validation).</summary>
     public IEnumerable<string> GetVisibleFieldKeys() =>
         Step?.Fields
             .Where(f => ConditionEvaluator.IsVisible(f.VisibleWhen, Context))
             .Select(f => f.Key)
         ?? [];
 
-    // ── Field type → component resolution ────────────────────────────────────
-    // To add a new field type: create XyzField.razor inheriting FieldComponentBase,
-    // then add one line here. Nothing else needs to change.
     private static Type Resolve(string fieldType) => fieldType switch
     {
         "text"          => typeof(TextField),
-        "textarea"      => typeof(TextareaField),
         "number"        => typeof(NumberField),
+        "date"          => typeof(DateField),
         "select"        => typeof(SelectField),
         "checkboxlist"  => typeof(CheckboxListField),
+        "repeater"      => typeof(RepeaterField),
         _ => throw new NotSupportedException($"Unknown fieldType '{fieldType}'.")
     };
 
-    // ── Uniform parameter dictionary ──────────────────────────────────────────
     private Dictionary<string, object?> Params(FieldDefinition field)
     {
         ValidationErrors.TryGetValue(field.Key, out var errs);
+
+        IReadOnlyDictionary<int, IReadOnlyDictionary<string, IReadOnlyList<string>>> rowErrors
+            = new Dictionary<int, IReadOnlyDictionary<string, IReadOnlyList<string>>>();
+
+        if (field.FieldType == "repeater" &&
+            ValidationAttempted &&
+            Context.GetValue(field.Key) is List<Dictionary<string, object?>> rows)
+        {
+            // Only show errors for rows that existed when the user last clicked
+            // Next/Submit. Rows added after that click are pristine — no errors
+            // until the user explicitly triggers validation again.
+            var snapshotCount = ValidatedRowCounts.TryGetValue(field.Key, out var c) ? c : 0;
+
+            rowErrors = ValidationService
+                .ValidateRepeaterRows(field, rows)
+                .Where(kv => kv.Key < snapshotCount)
+                .ToDictionary(
+                    kv => kv.Key,
+                    kv => (IReadOnlyDictionary<string, IReadOnlyList<string>>)
+                          kv.Value.ToDictionary(
+                              e => e.Key,
+                              e => (IReadOnlyList<string>)e.Value,
+                              StringComparer.OrdinalIgnoreCase));
+        }
+
         return new Dictionary<string, object?>
         {
             [nameof(FieldComponentBase.Field)]            = field,
@@ -68,10 +118,10 @@
             [nameof(FieldComponentBase.FormContext)]      = Context,
             [nameof(FieldComponentBase.OptionService)]    = OptionService,
             [nameof(FieldComponentBase.ValidationErrors)] = errs ?? (IReadOnlyList<string>)[],
+            [nameof(FieldComponentBase.RowErrors)]        = rowErrors,
         };
     }
 
-    // ── Change handler ────────────────────────────────────────────────────────
     private async Task OnFieldChanged(string key, object? value)
     {
         Context.SetValue(key, value);

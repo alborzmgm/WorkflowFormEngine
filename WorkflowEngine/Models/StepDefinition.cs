@@ -1,21 +1,22 @@
 namespace WorkflowFormEngine.WorkflowEngine.Models;
 
+/// <summary>
+/// A single step within a workflow.
+///
+/// StepType values:
+///   "form"   (default) — standard data-entry step with fields
+///   "review" — auto-generated read-only summary of all previous steps;
+///              Fields list is ignored for review steps (engine builds the view)
+/// </summary>
 public sealed class StepDefinition
 {
     public string StepKey { get; set; } = string.Empty;
     public string Title   { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Short description shown below the step title in the card header.
-    /// Defined in workflow JSON — no hardcoding in UI components.
-    /// </summary>
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Bootstrap Icons class name (e.g. "bi-geo-alt-fill") for the step card header.
-    /// Defined in workflow JSON so the UI is fully data-driven.
-    /// </summary>
-    public string Icon { get; set; } = "bi-pencil-square";
+    /// <summary>Defaults to "form". Use "review" for the confirmation step.</summary>
+    public string StepType { get; set; } = "form";
 
     public List<FieldDefinition> Fields { get; set; } = [];
+
+    public bool IsReview => StepType.Equals("review", StringComparison.OrdinalIgnoreCase);
 }
