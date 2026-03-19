@@ -163,6 +163,23 @@ else
                                             <span class="badge bg-primary me-1 mb-1">@item</span>
                                         }
                                     }
+                                    else if (kv.Value is List<Dictionary<string, string>> rows && rows.Count > 0)
+                                    {
+                                        <div class="wfe-summary-rows">
+                                            @foreach (var row in rows)
+                                            {
+                                                <div class="wfe-summary-row">
+                                                    @foreach (var cell in row)
+                                                    {
+                                                        <span class="wfe-summary-cell">
+                                                            <span class="wfe-summary-cell-key">@cell.Key:</span>
+                                                            <span class="wfe-summary-cell-val">@cell.Value</span>
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
                                     else
                                     {
                                         <span class="fw-medium">@(kv.Value?.ToString() ?? "—")</span>

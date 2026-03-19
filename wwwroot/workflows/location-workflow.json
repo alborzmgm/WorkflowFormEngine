@@ -241,6 +241,48 @@
           ]
         }
       ]
+    },
+    {
+      "stepKey": "products",
+      "title": "Products",
+      "description": "List the products you are interested in ordering.",
+      "icon": "bi-box-seam",
+      "fields": [
+        {
+          "key": "Products",
+          "label": "Product List",
+          "fieldType": "repeatablelist",
+          "required": true,
+          "order": 1,
+          "columns": [
+            {
+              "key": "productCode",
+              "label": "Product Code",
+              "columnType": "text",
+              "required": true,
+              "placeholder": "e.g. PROD-001"
+            },
+            {
+              "key": "quantity",
+              "label": "Quantity",
+              "columnType": "number",
+              "required": true,
+              "placeholder": "1"
+            },
+            {
+              "key": "deliveryDate",
+              "label": "Delivery Date",
+              "columnType": "date",
+              "required": true
+            }
+          ],
+          "validationRules": [
+            { "type": "required",  "message": "Please add at least one product." },
+            { "type": "minRows",   "value": "1",  "message": "Please add at least one product entry." },
+            { "type": "maxRows",   "value": "20", "message": "You may add at most 20 products per order." }
+          ]
+        }
+      ]
     }
   ]
 }

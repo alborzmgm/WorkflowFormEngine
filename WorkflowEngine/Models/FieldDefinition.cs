@@ -35,4 +35,11 @@ public sealed class FieldDefinition
     /// Ignored by all other field types.
     /// </summary>
     public int Rows { get; set; } = 4;
+
+    /// <summary>
+    /// Column definitions for "repeatablelist" field type.
+    /// Each entry describes one sub-field that the user fills in per row.
+    /// Ignored by all other field types.
+    /// </summary>
+    public List<ColumnDefinition> Columns { get; set; } = [];
 }

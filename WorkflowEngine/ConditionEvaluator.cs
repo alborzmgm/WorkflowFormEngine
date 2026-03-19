@@ -39,6 +39,21 @@ public static class ConditionEvaluator
             };
         }
 
+        // For repeatable-list fields, only hasValue / isEmpty make sense.
+        if (raw is List<Dictionary<string, string>> rows)
+        {
+            bool hasData = rows.Any(r => FormContext.IsRepeatableListRowNonEmpty(r));
+            return condition.Operator.ToLowerInvariant() switch
+            {
+                "hasvalue"  => hasData,
+                "isempty"   => !hasData,
+                "equals"    => false,
+                "notequals" => true,
+                _ => throw new NotSupportedException(
+                         $"Operator '{condition.Operator}' is not supported for repeatable-list fields.")
+            };
+        }
+
         var str = raw?.ToString() ?? string.Empty;
 
         return condition.Operator.ToLowerInvariant() switch

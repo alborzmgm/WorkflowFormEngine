@@ -8,8 +8,9 @@ using WorkflowEngine.Models;
 /// Registered as singleton — no per-request state.
 ///
 /// Supported rule types:
-///   Scalar fields:  required | minLength | maxLength | min | max | regex | email
-///   List fields:    required | minItems  | maxItems
+///   Scalar fields:         required | minLength | maxLength | min | max | regex | email
+///   List fields:           required | minItems  | maxItems
+///   Repeatable-list fields: required | minRows   | maxRows
 /// </summary>
 public sealed class ValidationService
 {
@@ -23,6 +24,34 @@ public sealed class ValidationService
     public IReadOnlyList<string> ValidateField(FieldDefinition field, object? value)
     {
         var errors = new List<string>();
+
+        // ── Repeatable-list field ──────────────────────────────────────────
+        if (value is List<Dictionary<string, string>> rows || field.FieldType == "repeatablelist")
+        {
+            var rowList = value as List<Dictionary<string, string>> ?? [];
+            // Count rows that have at least one non-empty column.
+            int filledRows = rowList.Count(r => FormContext.IsRepeatableListRowNonEmpty(r));
+
+            if (field.Required && filledRows == 0)
+            {
+                // Use the first matching required-rule message when present, else a default.
+                var requiredMsg = field.ValidationRules
+                    .FirstOrDefault(r => string.Equals(r.Type, "required", StringComparison.OrdinalIgnoreCase))
+                    ?.Message;
+                errors.Add(requiredMsg ?? $"Please add at least one {field.Label} entry.");
+                return errors;
+            }
+
+            foreach (var rule in field.ValidationRules)
+            {
+                var msg = EvaluateRepeatableListRule(rule, field.Label, filledRows);
+                if (msg is not null) errors.Add(msg);
+            }
+
+            return errors;
+        }
+
+        // ── Checkbox list field ────────────────────────────────────────────
 
         // Resolve whether this is a list value (CheckboxListField) or a scalar.
         var isList     = value is List<string>;
@@ -144,6 +173,34 @@ public sealed class ValidationService
 
             // Scalar-only rules applied to a list field are silently ignored.
             "minlength" or "maxlength" or "min" or "max" or "regex" or "email" => null,
+
+            _ => throw new NotSupportedException(
+                     $"Unknown ValidationRule type '{rule.Type}'.")
+        };
+
+    // ── Repeatable-list rule evaluation (RepeatableListField) ─────────────────
+
+    private static string? EvaluateRepeatableListRule(
+        ValidationRule rule, string label, int filledRows) =>
+
+        rule.Type.ToLowerInvariant() switch
+        {
+            "required" => filledRows == 0
+                          ? rule.Message ?? $"Please add at least one {label} entry."
+                          : null,
+
+            "minrows"  => int.TryParse(rule.Value, out var min) && filledRows < min
+                          ? rule.Message ?? $"Please add at least {min} {label} row(s)."
+                          : null,
+
+            "maxrows"  => int.TryParse(rule.Value, out var max) && filledRows > max
+                          ? rule.Message ?? $"You may add at most {max} {label} row(s)."
+                          : null,
+
+            // Rules for other field types are silently ignored on repeatable-list fields.
+            "minitems" or "maxitems" or
+            "minlength" or "maxlength" or
+            "min" or "max" or "regex" or "email" => null,
 
             _ => throw new NotSupportedException(
                      $"Unknown ValidationRule type '{rule.Type}'.")

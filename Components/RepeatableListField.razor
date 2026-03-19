@@ -1,0 +1,236 @@
+@namespace WorkflowFormEngine.Components
+@inherits FieldComponentBase
+
+<div class="mb-3">
+    <label class="form-label">
+        @Field.Label
+        @if (Field.Required)
+        {
+            <span class="text-danger ms-1" title="Required" aria-label="required">*</span>
+        }
+        @if (_rows.Count > 0)
+        {
+            <span class="wfe-checkbox-badge">@_rows.Count</span>
+        }
+    </label>
+
+    @if (Field.Columns.Count == 0)
+    {
+        <div class="form-text text-muted fst-italic">No columns defined for this list.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table wfe-repeatable-table">
+                <thead>
+                    <tr>
+                        @foreach (var col in Field.Columns)
+                        {
+                            <th>
+                                @col.Label
+                                @if (col.Required)
+                                {
+                                    <span class="text-danger ms-1">*</span>
+                                }
+                            </th>
+                        }
+                        <th style="width:3rem"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < _rows.Count; i++)
+                    {
+                        var rowIndex = i;
+                        <tr>
+                            @foreach (var col in Field.Columns)
+                            {
+                                var colKey = col.Key;
+                                var cellInvalid = _showRowErrors &&
+                                                  _rowErrors.TryGetValue(rowIndex, out var errs) &&
+                                                  errs.Contains(colKey);
+                                <td>
+                                    <input type="@GetInputType(col.ColumnType)"
+                                           class="form-control form-control-sm @(cellInvalid ? "is-invalid" : "")"
+                                           value="@GetCellValue(rowIndex, colKey)"
+                                           placeholder="@col.Placeholder"
+                                           @onchange="@(e => OnCellChanged(rowIndex, colKey, e.Value?.ToString()))" />
+                                </td>
+                            }
+                            <td class="align-middle text-center">
+                                <button type="button"
+                                        class="btn btn-outline-danger btn-sm wfe-repeatable-remove"
+                                        @onclick="@(() => RemoveRow(rowIndex))"
+                                        title="Remove row">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+
+                    @if (_rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="@(Field.Columns.Count + 1)" class="text-center text-muted fst-italic py-3">
+                                No rows yet — click <strong>Add row</strong> to begin.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="btn btn-outline-primary btn-sm wfe-repeatable-add"
+                @onclick="AddRow">
+            <i class="bi bi-plus-circle me-1"></i>Add row
+        </button>
+    }
+
+    @if (HasErrors)
+    {
+        <div class="invalid-feedback d-block mt-2">
+            @foreach (var e in ValidationErrors)
+            {
+                <div><i class="bi bi-exclamation-circle-fill me-1"></i>@e</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    // Local row data — source of truth after first initialisation.
+    private List<Dictionary<string, string>> _rows = [];
+
+    // rowIndex → set of column keys that are invalid.
+    private Dictionary<int, HashSet<string>> _rowErrors = [];
+
+    // Only show inline cell errors after the user has attempted to advance.
+    private bool _showRowErrors = false;
+
+    private bool _initialized = false;
+
+    private bool HasErrors => ValidationErrors.Count > 0;
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    protected override void OnParametersSet()
+    {
+        // Sync from FormContext on first mount only (supports back-navigation).
+        if (!_initialized)
+        {
+            SyncFromValue();
+            _initialized = true;
+        }
+
+        // Surface per-cell errors alongside the field-level error banner.
+        if (ValidationErrors.Count > 0)
+        {
+            _showRowErrors = true;
+            ValidateRows();
+        }
+        else
+        {
+            _showRowErrors = false;
+            _rowErrors = [];
+        }
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private string GetCellValue(int rowIndex, string colKey) =>
+        rowIndex < _rows.Count && _rows[rowIndex].TryGetValue(colKey, out var v) ? v : string.Empty;
+
+    private void SyncFromValue()
+    {
+        if (Value is List<Dictionary<string, string>> incoming)
+        {
+            _rows = incoming.Select(r =>
+            {
+                // Ensure every defined column key is present after deserialization.
+                var row = new Dictionary<string, string>(r, StringComparer.OrdinalIgnoreCase);
+                foreach (var col in Field.Columns)
+                    row.TryAdd(col.Key, string.Empty);
+                return row;
+            }).ToList();
+        }
+        else
+            _rows = [];
+    }
+
+    // ── Events ───────────────────────────────────────────────────────────────
+
+    private async Task OnCellChanged(int rowIndex, string colKey, string? newValue)
+    {
+        if (rowIndex >= _rows.Count) return;
+        _rows[rowIndex][colKey] = newValue ?? string.Empty;
+        if (_showRowErrors) ValidateRows();
+        await PushValue();
+    }
+
+    private async Task AddRow()
+    {
+        // Pre-populate all column keys with empty strings so that cell access
+        // and required-column validation work correctly from the first render.
+        var newRow = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var col in Field.Columns)
+            newRow[col.Key] = string.Empty;
+
+        _rows.Add(newRow);
+        await PushValue();
+    }
+
+    private async Task RemoveRow(int rowIndex)
+    {
+        if (rowIndex < _rows.Count)
+        {
+            _rows.RemoveAt(rowIndex);
+            // Row indices have shifted — rebuild errors.
+            _rowErrors = [];
+            if (_showRowErrors) ValidateRows();
+        }
+
+        await PushValue();
+    }
+
+    private async Task PushValue()
+    {
+        // Only push rows that have at least one non-empty cell.
+        var meaningful = _rows
+            .Where(r => FormContext.IsRepeatableListRowNonEmpty(r))
+            .Select(r => new Dictionary<string, string>(r, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        await OnValueChanged.InvokeAsync(meaningful.Count > 0 ? (object?)meaningful : null);
+    }
+
+    // ── Row-level validation ─────────────────────────────────────────────────
+
+    private void ValidateRows()
+    {
+        _rowErrors = [];
+
+        for (int i = 0; i < _rows.Count; i++)
+        {
+            var row = _rows[i];
+            foreach (var col in Field.Columns)
+            {
+                if (!col.Required) continue;
+                if (!row.TryGetValue(col.Key, out var val) || string.IsNullOrWhiteSpace(val))
+                {
+                    if (!_rowErrors.ContainsKey(i))
+                        _rowErrors[i] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    _rowErrors[i].Add(col.Key);
+                }
+            }
+        }
+    }
+
+    // ── Input type resolution ────────────────────────────────────────────────
+
+    private static string GetInputType(string columnType) =>
+        columnType.ToLowerInvariant() switch
+        {
+            "number" => "number",
+            "date"   => "date",
+            _        => "text",
+        };
+}
