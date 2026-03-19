@@ -1,0 +1,238 @@
+@namespace WorkflowFormEngine.Components
+@inherits FieldComponentBase
+@using WorkflowFormEngine.WorkflowEngine
+@using WorkflowFormEngine.WorkflowEngine.Models
+@using WorkflowFormEngine.Services
+
+@inject ValidationService ValidationService
+
+<div class="mb-3">
+    <label class="form-label">
+        @Field.Label
+        @if (Field.Required)
+        {
+            <span class="text-danger ms-1" title="Required" aria-label="required">*</span>
+        }
+        @if (_entryContexts.Count > 0)
+        {
+            <span class="wfe-checkbox-badge">@_entryContexts.Count</span>
+        }
+    </label>
+
+    @if (Field.SubFields.Count == 0)
+    {
+        <div class="form-text text-muted fst-italic">No sub-fields defined for this repeater.</div>
+    }
+    else
+    {
+        @if (_entryContexts.Count == 0)
+        {
+            <div class="wfe-repeater-empty">
+                <i class="bi bi-inbox me-2"></i>No @_itemLabelPlural yet — click <strong>Add @_itemLabel</strong> to begin.
+            </div>
+        }
+        else
+        {
+            <div class="wfe-repeater-list">
+                @for (int i = 0; i < _entryContexts.Count; i++)
+                {
+                    var idx         = i;
+                    var hasErrors   = _entryErrors.ContainsKey(idx);
+                    var cardCss     = "wfe-repeater-card" + (hasErrors ? " wfe-repeater-card--invalid" : "");
+                    var entryErrors = GetEntryErrors(idx);
+
+                    <div class="@cardCss" @key="idx">
+                        <div class="wfe-repeater-card-header">
+                            <span class="wfe-repeater-card-title">
+                                <i class="bi bi-list-ul me-2"></i>@_itemLabelCapitalized @(idx + 1)
+                                @if (hasErrors)
+                                {
+                                    <i class="bi bi-exclamation-circle-fill ms-2 text-danger"
+                                       title="This entry has validation errors"></i>
+                                }
+                            </span>
+                            <button type="button"
+                                    class="btn btn-link btn-sm text-danger wfe-repeater-remove"
+                                    @onclick="() => RemoveEntry(idx)"
+                                    title="Remove @_itemLabel @(idx + 1)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        <div class="wfe-repeater-card-body">
+                            @if (hasErrors)
+                            {
+                                <div class="alert alert-danger wfe-repeater-entry-alert" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    Please fix the errors in this @_itemLabel before proceeding.
+                                </div>
+                            }
+                            <RepeaterSubForm Fields="@Field.SubFields"
+                                             Context="@_entryContexts[idx]"
+                                             ValidationErrors="@entryErrors"
+                                             OnContextChanged="@(EventCallback.Factory.Create(this, () => OnEntryChanged(idx)))" />
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <button type="button"
+                class="btn btn-outline-primary btn-sm mt-2 wfe-repeater-add"
+                disabled="@(_entryErrors.Count > 0)"
+                title="@(_entryErrors.Count > 0 ? $"Fix the errors in existing {_itemLabelPlural} before adding a new one." : null)"
+                @onclick="AddEntry">
+            <i class="bi bi-plus-circle me-1"></i>Add @_itemLabel
+        </button>
+    }
+
+    @if (HasErrors)
+    {
+        <div class="invalid-feedback d-block mt-2">
+            @foreach (var e in ValidationErrors)
+            {
+                <div><i class="bi bi-exclamation-circle-fill me-1"></i>@e</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    // One FormContext per entry — source of truth for in-progress edits.
+    private List<FormContext> _entryContexts = [];
+
+    // entryIndex → (fieldKey → error messages). Populated after failed step validation.
+    private Dictionary<int, Dictionary<string, IReadOnlyList<string>>> _entryErrors = [];
+
+    private bool _showEntryErrors = false;
+    private bool _initialized     = false;
+
+    private bool HasErrors => ValidationErrors.Count > 0;
+
+    // ── Item label helpers ────────────────────────────────────────────────────
+
+    private string _itemLabel =>
+        Field.ItemLabel is { Length: > 0 } lbl ? lbl.Trim() : "entry";
+
+    private string _itemLabelCapitalized =>
+        _itemLabel.Length == 0 ? string.Empty
+            : char.ToUpper(_itemLabel[0]) + _itemLabel[1..];
+
+    private string _itemLabelPlural =>
+        Field.ItemLabelPlural is { Length: > 0 } plural
+            ? plural.Trim()
+            : (_itemLabel == "entry" ? "entries" : _itemLabel + "s");
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    protected override void OnParametersSet()
+    {
+        // Restore entries from FormContext on first mount (supports back-navigation).
+        if (!_initialized)
+        {
+            SyncFromValue();
+            _initialized = true;
+        }
+
+        // When the parent step validation has failed, show per-entry, per-field errors.
+        if (ValidationErrors.Count > 0)
+        {
+            _showEntryErrors = true;
+            ValidateEntries();
+        }
+        else
+        {
+            _showEntryErrors = false;
+            _entryErrors     = [];
+        }
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private IReadOnlyDictionary<string, IReadOnlyList<string>> GetEntryErrors(int index) =>
+        _entryErrors.TryGetValue(index, out var e)
+            ? e
+            : (IReadOnlyDictionary<string, IReadOnlyList<string>>)new Dictionary<string, IReadOnlyList<string>>();
+
+    private void SyncFromValue()
+    {
+        if (Value is List<Dictionary<string, object?>> entries)
+        {
+            _entryContexts = entries.Select(e =>
+            {
+                var ctx = new FormContext();
+                foreach (var kv in e)
+                    ctx.SetValue(kv.Key, kv.Value);
+                return ctx;
+            }).ToList();
+        }
+        else
+        {
+            _entryContexts = [];
+        }
+    }
+
+    // ── Events ───────────────────────────────────────────────────────────────
+
+    private async Task AddEntry()
+    {
+        _entryContexts.Add(new FormContext());
+        if (_showEntryErrors) ValidateEntries();
+        await PushValue();
+    }
+
+    private async Task RemoveEntry(int index)
+    {
+        if (index < _entryContexts.Count)
+        {
+            _entryContexts.RemoveAt(index);
+            // Entry indices have shifted — rebuild error map from scratch.
+            _entryErrors = [];
+            if (_showEntryErrors) ValidateEntries();
+        }
+        await PushValue();
+    }
+
+    private async Task OnEntryChanged(int index)
+    {
+        // A sub-field inside entry[index] changed. Re-validate if needed and propagate.
+        if (_showEntryErrors) ValidateEntries();
+        await PushValue();
+    }
+
+    private async Task PushValue()
+    {
+        // Serialize all entry FormContexts to a plain list of dictionaries.
+        var payload = _entryContexts
+            .Select(ctx => new Dictionary<string, object?>(ctx.AllValues))
+            .ToList();
+
+        await OnValueChanged.InvokeAsync(payload.Count > 0 ? (object?)payload : null);
+    }
+
+    // ── Per-entry validation ──────────────────────────────────────────────────
+
+    private void ValidateEntries()
+    {
+        _entryErrors = [];
+
+        for (int i = 0; i < _entryContexts.Count; i++)
+        {
+            var ctx    = _entryContexts[i];
+            var errs   = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var subField in Field.SubFields.OrderBy(f => f.Order))
+            {
+                // Skip subfields that are hidden in this entry's context.
+                if (!ConditionEvaluator.IsVisible(subField.VisibleWhen, ctx)) continue;
+
+                var subValue  = ctx.GetValue(subField.Key);
+                var subErrors = ValidationService.ValidateField(subField, subValue);
+                if (subErrors.Count > 0)
+                    errs[subField.Key] = subErrors;
+            }
+
+            if (errs.Count > 0)
+                _entryErrors[i] = errs;
+        }
+    }
+}

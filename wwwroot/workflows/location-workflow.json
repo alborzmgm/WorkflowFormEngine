@@ -241,6 +241,80 @@
           ]
         }
       ]
+    },
+    {
+      "stepKey": "products",
+      "title": "Products",
+      "description": "List the products you are interested in ordering.",
+      "icon": "bi-box-seam",
+      "fields": [
+        {
+          "key": "Products",
+          "label": "Product List",
+          "fieldType": "repeater",
+          "itemLabel": "product",
+          "itemLabelPlural": "products",
+          "required": true,
+          "order": 1,
+          "subFields": [
+            {
+              "key": "productCode",
+              "label": "Product Code",
+              "fieldType": "text",
+              "placeholder": "e.g. PROD-001",
+              "required": true,
+              "order": 1,
+              "validationRules": [
+                { "type": "required", "message": "Product Code is required." },
+                { "type": "minLength", "value": "3", "message": "Product Code must be at least 3 characters." },
+                { "type": "maxLength", "value": "20" }
+              ]
+            },
+            {
+              "key": "productName",
+              "label": "Product Name",
+              "fieldType": "text",
+              "placeholder": "e.g. Widget Pro",
+              "required": true,
+              "order": 2,
+              "validationRules": [
+                { "type": "required", "message": "Product Name is required." },
+                { "type": "maxLength", "value": "100" }
+              ]
+            },
+            {
+              "key": "quantity",
+              "label": "Quantity",
+              "fieldType": "number",
+              "placeholder": "1",
+              "required": true,
+              "order": 3,
+              "validationRules": [
+                { "type": "required", "message": "Quantity is required." },
+                { "type": "min", "value": "1", "message": "Quantity must be at least 1." },
+                { "type": "max", "value": "9999" }
+              ]
+            },
+            {
+              "key": "notes",
+              "label": "Notes",
+              "fieldType": "textarea",
+              "placeholder": "Optional notes about this product…",
+              "required": false,
+              "order": 4,
+              "rows": 2,
+              "validationRules": [
+                { "type": "maxLength", "value": "200" }
+              ]
+            }
+          ],
+          "validationRules": [
+            { "type": "required",    "message": "Please add at least one product." },
+            { "type": "minEntries", "value": "1",  "message": "Please add at least one product entry." },
+            { "type": "maxEntries", "value": "20", "message": "You may add at most 20 products per order." }
+          ]
+        }
+      ]
     }
   ]
 }

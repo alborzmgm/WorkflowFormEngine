@@ -20,7 +20,8 @@ public sealed class FormContext
 
     /// <summary>
     /// Returns true when the key exists and has a meaningful value.
-    /// Handles both scalar values and List&lt;string&gt; (used by CheckboxListField).
+    /// Handles scalar values, List&lt;string&gt; (CheckboxListField), and
+    /// List&lt;Dictionary&lt;string, object?&gt;&gt; (RepeaterField).
     /// </summary>
     public bool HasValue(string key)
     {
@@ -30,6 +31,10 @@ public sealed class FormContext
         // Checkbox list stores its selections as List<string>
         if (val is List<string> list)
             return list.Count > 0;
+
+        // Repeater field stores entries as List<Dictionary<string, object?>>
+        if (val is List<Dictionary<string, object?>> entries)
+            return entries.Count > 0;
 
         return val.ToString() is { Length: > 0 };
     }

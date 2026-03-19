@@ -163,6 +163,38 @@ else
                                             <span class="badge bg-primary me-1 mb-1">@item</span>
                                         }
                                     }
+                                    else if (kv.Value is List<Dictionary<string, object?>> entries && entries.Count > 0)
+                                    {
+                                        <div class="wfe-summary-rows">
+                                            @for (int ei = 0; ei < entries.Count; ei++)
+                                            {
+                                                var entryNum = ei + 1;
+                                                <div class="wfe-summary-row">
+                                                    <div class="wfe-summary-entry-header">@GetItemLabelCapitalized(kv.Key) @entryNum</div>
+                                                    @foreach (var cell in entries[ei])
+                                                    {
+                                                        @if (cell.Value is not null &&
+                                                             !(cell.Value is string sv && string.IsNullOrWhiteSpace(sv)))
+                                                        {
+                                                            <span class="wfe-summary-cell">
+                                                                <span class="wfe-summary-cell-key">@cell.Key:</span>
+                                                                <span class="wfe-summary-cell-val">
+                                                                    @if (cell.Value is List<string> subItems)
+                                                                    {
+                                                                        @string.Join(", ", subItems)
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        @cell.Value?.ToString()
+                                                                    }
+                                                                </span>
+                                                            </span>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
                                     else
                                     {
                                         <span class="fw-medium">@(kv.Value?.ToString() ?? "—")</span>
@@ -237,5 +269,15 @@ else
                      ?? CurrentStep.Fields.Select(f => f.Key);
         _errors = ValidationService.ValidateStep(CurrentStep, _ctx, visible);
         return _errors.Count == 0;
+    }
+
+    private string GetItemLabelCapitalized(string fieldKey)
+    {
+        var field = _workflow?.Steps
+            .SelectMany(s => s.Fields)
+            .FirstOrDefault(f => string.Equals(f.Key, fieldKey, StringComparison.OrdinalIgnoreCase));
+
+        var label = field?.ItemLabel is { Length: > 0 } lbl ? lbl.Trim() : "entry";
+        return char.ToUpper(label[0]) + label[1..];
     }
 }

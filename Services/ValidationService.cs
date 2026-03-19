@@ -2,14 +2,16 @@ namespace WorkflowFormEngine.Services;
 
 using System.Text.RegularExpressions;
 using WorkflowEngine.Models;
+using WorkflowFormEngine.WorkflowEngine;
 
 /// <summary>
 /// Stateless rule evaluator for ValidationRule lists.
 /// Registered as singleton — no per-request state.
 ///
 /// Supported rule types:
-///   Scalar fields:  required | minLength | maxLength | min | max | regex | email
-///   List fields:    required | minItems  | maxItems
+///   Scalar fields:         required | minLength | maxLength | min | max | regex | email
+///   List fields:           required | minItems  | maxItems
+///   Repeater fields:       required | minEntries | maxEntries
 /// </summary>
 public sealed class ValidationService
 {
@@ -23,6 +25,56 @@ public sealed class ValidationService
     public IReadOnlyList<string> ValidateField(FieldDefinition field, object? value)
     {
         var errors = new List<string>();
+
+        // ── Repeater field ────────────────────────────────────────────────
+        if (field.FieldType == "repeater" || value is List<Dictionary<string, object?>>)
+        {
+            var entryList = value as List<Dictionary<string, object?>> ?? [];
+
+            if (field.Required && entryList.Count == 0)
+            {
+                var requiredMsg = field.ValidationRules
+                    .FirstOrDefault(r => string.Equals(r.Type, "required", StringComparison.OrdinalIgnoreCase))
+                    ?.Message;
+                errors.Add(requiredMsg ?? $"Please add at least one {field.Label} entry.");
+                return errors;
+            }
+
+            // Per-entry, per-subfield validation — only track whether any entry has errors;
+            // the detailed per-field messages are displayed inline inside each entry card
+            // and should not be duplicated at the top-level / step-banner level.
+            bool anyEntryErrors = false;
+            for (int i = 0; i < entryList.Count; i++)
+            {
+                var entry    = entryList[i];
+                var entryCtx = new FormContext();
+                foreach (var kv in entry) entryCtx.SetValue(kv.Key, kv.Value);
+
+                foreach (var subField in field.SubFields.OrderBy(sf => sf.Order))
+                {
+                    if (!ConditionEvaluator.IsVisible(subField.VisibleWhen, entryCtx)) continue;
+
+                    var subValue  = entry.TryGetValue(subField.Key, out var sv) ? sv : null;
+                    var subErrors = ValidateField(subField, subValue);
+                    if (subErrors.Count > 0) { anyEntryErrors = true; break; }
+                }
+
+                if (anyEntryErrors) break;
+            }
+
+            if (anyEntryErrors)
+                errors.Add("Some entries have validation errors — please review them below.");
+
+            foreach (var rule in field.ValidationRules)
+            {
+                var msg = EvaluateRepeaterRule(rule, field.Label, entryList.Count);
+                if (msg is not null) errors.Add(msg);
+            }
+
+            return errors;
+        }
+
+        // ── Checkbox list field ────────────────────────────────────────────
 
         // Resolve whether this is a list value (CheckboxListField) or a scalar.
         var isList     = value is List<string>;
@@ -148,4 +200,34 @@ public sealed class ValidationService
             _ => throw new NotSupportedException(
                      $"Unknown ValidationRule type '{rule.Type}'.")
         };
+
+    // ── Repeater rule evaluation (RepeaterField) ──────────────────────────────
+
+    private static string? EvaluateRepeaterRule(
+        ValidationRule rule, string label, int entryCount) =>
+
+        rule.Type.ToLowerInvariant() switch
+        {
+            "required"    => entryCount == 0
+                             ? rule.Message ?? $"Please add at least one {label} entry."
+                             : null,
+
+            "minentries"  => int.TryParse(rule.Value, out var min) && entryCount < min
+                             ? rule.Message ?? $"Please add at least {min} {label} {Entries(min)}."
+                             : null,
+
+            "maxentries"  => int.TryParse(rule.Value, out var max) && entryCount > max
+                             ? rule.Message ?? $"You may add at most {max} {label} {Entries(max)}."
+                             : null,
+
+            // Rules for other field types are silently ignored on repeater fields.
+            "minitems" or "maxitems" or
+            "minlength" or "maxlength" or
+            "min" or "max" or "regex" or "email" => null,
+
+            _ => throw new NotSupportedException(
+                     $"Unknown ValidationRule type '{rule.Type}'.")
+        };
+
+    private static string Entries(int count) => count == 1 ? "entry" : "entries";
 }
