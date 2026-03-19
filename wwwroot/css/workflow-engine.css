@@ -422,7 +422,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   10. REPEATABLE LIST FIELD
+   9. REPEATABLE LIST FIELD
    ═══════════════════════════════════════════════════════════════════════════ */
 .wfe-repeatable-table {
     font-size: .88rem;
@@ -475,6 +475,18 @@ body {
     font-size: .85rem;
 }
 
+.wfe-summary-entry-header {
+    width: 100%;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #1a56db;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding-bottom: .2rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: .2rem;
+}
+
 .wfe-summary-cell {
     display: inline-flex;
     gap: .25rem;
@@ -491,7 +503,85 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   9. SUBMISSION SUMMARY CARD
+   10. REPEATER FIELD — card-per-entry form
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wfe-repeater-empty {
+    padding: 1rem 1.25rem;
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 10px;
+    color: #94a3b8;
+    font-size: .88rem;
+    text-align: center;
+    margin-bottom: .5rem;
+}
+
+.wfe-repeater-list {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    margin-bottom: .5rem;
+}
+
+.wfe-repeater-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    transition: border-color .15s;
+}
+
+.wfe-repeater-card:hover {
+    border-color: #bfdbfe;
+}
+
+.wfe-repeater-card--invalid {
+    border-color: #fca5a5;
+    background: #fffafa;
+}
+
+.wfe-repeater-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .55rem 1rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wfe-repeater-card--invalid .wfe-repeater-card-header {
+    background: #fff5f5;
+    border-bottom-color: #fecaca;
+}
+
+.wfe-repeater-card-title {
+    font-size: .82rem;
+    font-weight: 700;
+    color: #374151;
+    letter-spacing: .01em;
+}
+
+.wfe-repeater-remove {
+    padding: .1rem .4rem;
+    font-size: .88rem;
+    line-height: 1.4;
+    color: #ef4444;
+    text-decoration: none;
+}
+
+.wfe-repeater-remove:hover { color: #b91c1c; }
+
+.wfe-repeater-card-body {
+    padding: 1rem 1.25rem .5rem;
+}
+
+.wfe-repeater-add {
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   11. SUBMISSION SUMMARY CARD
    ═══════════════════════════════════════════════════════════════════════════ */
 .wfe-summary-card {
     border: none;

@@ -20,8 +20,9 @@ public sealed class FormContext
 
     /// <summary>
     /// Returns true when the key exists and has a meaningful value.
-    /// Handles scalar values, List&lt;string&gt; (CheckboxListField), and
-    /// List&lt;Dictionary&lt;string, string&gt;&gt; (RepeatableListField).
+    /// Handles scalar values, List&lt;string&gt; (CheckboxListField),
+    /// List&lt;Dictionary&lt;string, string&gt;&gt; (RepeatableListField), and
+    /// List&lt;Dictionary&lt;string, object?&gt;&gt; (RepeaterField).
     /// </summary>
     public bool HasValue(string key)
     {
@@ -35,6 +36,10 @@ public sealed class FormContext
         // Repeatable list stores rows as List<Dictionary<string, string>>
         if (val is List<Dictionary<string, string>> rows)
             return rows.Any(r => IsRepeatableListRowNonEmpty(r));
+
+        // Repeater field stores entries as List<Dictionary<string, object?>>
+        if (val is List<Dictionary<string, object?>> entries)
+            return entries.Count > 0;
 
         return val.ToString() is { Length: > 0 };
     }

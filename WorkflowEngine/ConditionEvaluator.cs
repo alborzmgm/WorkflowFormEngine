@@ -54,6 +54,20 @@ public static class ConditionEvaluator
             };
         }
 
+        // For repeater fields, only hasValue / isEmpty make sense.
+        if (raw is List<Dictionary<string, object?>> entries)
+        {
+            return condition.Operator.ToLowerInvariant() switch
+            {
+                "hasvalue"  => entries.Count > 0,
+                "isempty"   => entries.Count == 0,
+                "equals"    => false,
+                "notequals" => true,
+                _ => throw new NotSupportedException(
+                         $"Operator '{condition.Operator}' is not supported for repeater fields.")
+            };
+        }
+
         var str = raw?.ToString() ?? string.Empty;
 
         return condition.Operator.ToLowerInvariant() switch

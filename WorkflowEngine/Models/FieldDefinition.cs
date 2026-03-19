@@ -42,4 +42,12 @@ public sealed class FieldDefinition
     /// Ignored by all other field types.
     /// </summary>
     public List<ColumnDefinition> Columns { get; set; } = [];
+
+    /// <summary>
+    /// Sub-field definitions for the "repeater" field type.
+    /// Each entry is a full <see cref="FieldDefinition"/> — every field type,
+    /// validation rule, and visibility condition is supported within an entry.
+    /// Ignored by all other field types.
+    /// </summary>
+    public List<FieldDefinition> SubFields { get; set; } = [];
 }
