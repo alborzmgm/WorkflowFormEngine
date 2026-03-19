@@ -1,4 +1,20 @@
-# WorkflowFormEngine — v6 (.NET 10 + Blazor Server + Bootstrap 5)
+# WorkflowFormEngine — v7 (.NET 10 + Blazor Server + Bootstrap 5)
+
+## What's New in v7 — Repeater Field & Cleanup
+
+| Area | Change |
+|---|---|
+| **`RepeaterField.razor`** | New field type — card-per-entry sub-form supporting all nested field types, visibility conditions, and per-entry validation |
+| **`RepeaterSubForm.razor`** | Renders the sub-fields inside each repeater entry card; mirrors `DynamicForm` field resolution |
+| **`FieldDefinition`** | Added `SubFields`, `ItemLabel`, `ItemLabelPlural` properties for `repeater` |
+| **`FormContext.HasValue()`** | Updated to handle `List<Dictionary<string, object?>>` — a non-empty entry list = has value |
+| **`ValidationService`** | New `minEntries` and `maxEntries` rule types; per-entry sub-field validation with inline error cards |
+| **`DynamicForm.Resolve()`** | Added `"repeater" => RepeaterField` |
+| **`ConditionEvaluator`** | Extended to handle `List<Dictionary<string, object?>>` (repeater) values — `hasValue`/`isEmpty` supported |
+| **`location-workflow.json`** | Added `Products` step with a `repeater` field (product code, name, quantity, notes) |
+| **Removed** | `RepeatableListField`, `ColumnDefinition`, and all related code — replaced entirely by the more powerful `repeater` type |
+
+---
 
 ## What's New in v6 — Declarative Step Metadata, Textarea Field & Correct List Conditions
 
@@ -118,20 +134,23 @@ Navigate to `https://localhost:5001/workflow`
 | `number` | `NumberField` | `decimal` |
 | `select` | `SelectField` | `string` |
 | `checkboxlist` | `CheckboxListField` | `List<string>` |
+| `repeater` | `RepeaterField` | `List<Dictionary<string, object?>>` |
 
 ## All Supported ValidationRule Types
 
 | type | Applies to | value field | description |
 |---|---|---|---|
-| `required` | all | — | non-empty / at least one checked |
+| `required` | all | — | non-empty / at least one checked / at least one entry |
 | `minLength` | scalar | int | string length >= N |
 | `maxLength` | scalar | int | string length <= N |
 | `min` | number | decimal | value >= N |
 | `max` | number | decimal | value <= N |
 | `regex` | scalar | — | value matches pattern |
 | `email` | scalar | — | valid email format |
-| `minItems` | checkboxlist | int | at least N selected |
-| `maxItems` | checkboxlist | int | at most N selected |
+| `minItems` | checkboxlist | int | at least N items selected |
+| `maxItems` | checkboxlist | int | at most N items selected |
+| `minEntries` | repeater | int | at least N entries added |
+| `maxEntries` | repeater | int | at most N entries added |
 
 ## All Supported ConditionRule Operators
 
@@ -149,9 +168,9 @@ Navigate to `https://localhost:5001/workflow`
 
 ```
 WorkflowFormEngine/
-├── WorkflowEngine/Models/     FieldDefinition (+ Rows), StepDefinition (+ Description, Icon),
-│                              ValidationRule, ConditionRule, FormContext (List-aware)
-├── WorkflowEngine/            DependencyGraph, ConditionEvaluator (list-aware), WorkflowLoader
+├── WorkflowEngine/Models/     FieldDefinition (+ Rows, SubFields, ItemLabel), StepDefinition (+ Description, Icon),
+│                              ValidationRule, ConditionRule, FormContext (list/repeater-aware)
+├── WorkflowEngine/            DependencyGraph, ConditionEvaluator (list/repeater-aware), WorkflowLoader
 ├── Providers/
 │   ├── IDataSourceProvider.cs
 │   ├── CountryProvider.cs
@@ -169,17 +188,19 @@ WorkflowFormEngine/
 │   ├── App.razor
 │   ├── Routes.razor
 │   ├── FieldComponentBase.cs
-│   ├── DynamicForm.razor           "textarea" added to Resolve()
+│   ├── DynamicForm.razor
 │   ├── TextField.razor
-│   ├── TextareaField.razor         NEW — multi-line text input
+│   ├── TextareaField.razor
 │   ├── NumberField.razor
 │   ├── SelectField.razor
-│   └── CheckboxListField.razor
+│   ├── CheckboxListField.razor
+│   ├── RepeaterField.razor         card-per-entry repeating sub-form
+│   └── RepeaterSubForm.razor       renders sub-fields inside each entry card
 ├── Pages/
-│   └── WorkflowPage.razor          step icon/description now from JSON
+│   └── WorkflowPage.razor
 ├── wwwroot/
 │   ├── css/workflow-engine.css
-│   └── workflows/location-workflow.json   step icons/descriptions + textarea for AdditionalNotes
+│   └── workflows/location-workflow.json
 ├── _Imports.razor
 ├── Program.cs
 └── WorkflowFormEngine.csproj       net10.0
