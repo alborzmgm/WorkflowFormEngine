@@ -170,7 +170,7 @@ else
                                             {
                                                 var entryNum = ei + 1;
                                                 <div class="wfe-summary-row">
-                                                    <div class="wfe-summary-entry-header">Entry @entryNum</div>
+                                                    <div class="wfe-summary-entry-header">@GetItemLabelCapitalized(kv.Key) @entryNum</div>
                                                     @foreach (var cell in entries[ei])
                                                     {
                                                         @if (cell.Value is not null &&
@@ -269,5 +269,15 @@ else
                      ?? CurrentStep.Fields.Select(f => f.Key);
         _errors = ValidationService.ValidateStep(CurrentStep, _ctx, visible);
         return _errors.Count == 0;
+    }
+
+    private string GetItemLabelCapitalized(string fieldKey)
+    {
+        var field = _workflow?.Steps
+            .SelectMany(s => s.Fields)
+            .FirstOrDefault(f => string.Equals(f.Key, fieldKey, StringComparison.OrdinalIgnoreCase));
+
+        var label = field?.ItemLabel is { Length: > 0 } lbl ? lbl.Trim() : "entry";
+        return char.ToUpper(label[0]) + label[1..];
     }
 }
