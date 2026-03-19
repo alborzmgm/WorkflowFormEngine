@@ -5,16 +5,18 @@
 
 @inject OptionService OptionService
 
-@foreach (var field in Fields.OrderBy(f => f.Order))
-{
-    @if (ConditionEvaluator.IsVisible(field.VisibleWhen, Context))
+<div class="row g-3">
+    @foreach (var field in Fields.OrderBy(f => f.Order))
     {
-        <div @key="field.Key">
-            <DynamicComponent Type="@Resolve(field.FieldType)"
-                              Parameters="@Params(field)" />
-        </div>
+        @if (ConditionEvaluator.IsVisible(field.VisibleWhen, Context))
+        {
+            <div class="@ColClass(field.FieldType)" @key="field.Key">
+                <DynamicComponent Type="@Resolve(field.FieldType)"
+                                  Parameters="@Params(field)" />
+            </div>
+        }
     }
-}
+</div>
 
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<FieldDefinition> Fields { get; set; } = [];
@@ -49,6 +51,19 @@
         "repeatablelist" => typeof(RepeatableListField),
         "repeater"       => typeof(RepeaterField),
         _ => throw new NotSupportedException($"Unknown fieldType '{fieldType}'.")
+    };
+
+    /// <summary>
+    /// Returns Bootstrap column classes for a sub-field.
+    /// Simple scalar fields (text, number, select) share a row two-across on ≥md screens.
+    /// Complex / tall fields (textarea, checkboxlist, repeatablelist, repeater) take the full row.
+    /// </summary>
+    private static string ColClass(string fieldType) => fieldType switch
+    {
+        "text"   => "col-12 col-md-6",
+        "number" => "col-12 col-md-6",
+        "select" => "col-12 col-md-6",
+        _        => "col-12",
     };
 
     // ── Uniform parameter dictionary ──────────────────────────────────────────

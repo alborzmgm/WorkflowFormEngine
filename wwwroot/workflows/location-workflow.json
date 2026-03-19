@@ -252,6 +252,8 @@
           "key": "Products",
           "label": "Product List",
           "fieldType": "repeater",
+          "itemLabel": "product",
+          "itemLabelPlural": "products",
           "required": true,
           "order": 1,
           "subFields": [

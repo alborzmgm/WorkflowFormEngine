@@ -41,12 +41,13 @@ public sealed class ValidationService
                 return errors;
             }
 
-            // Per-entry, per-subfield validation — visibility is respected.
+            // Per-entry, per-subfield validation — only track whether any entry has errors;
+            // the detailed per-field messages are displayed inline inside each entry card
+            // and should not be duplicated at the top-level / step-banner level.
+            bool anyEntryErrors = false;
             for (int i = 0; i < entryList.Count; i++)
             {
-                var entry = entryList[i];
-
-                // Build a throwaway FormContext so ConditionEvaluator can check visibility.
+                var entry    = entryList[i];
                 var entryCtx = new FormContext();
                 foreach (var kv in entry) entryCtx.SetValue(kv.Key, kv.Value);
 
@@ -54,12 +55,16 @@ public sealed class ValidationService
                 {
                     if (!ConditionEvaluator.IsVisible(subField.VisibleWhen, entryCtx)) continue;
 
-                    var subValue = entry.TryGetValue(subField.Key, out var sv) ? sv : null;
+                    var subValue  = entry.TryGetValue(subField.Key, out var sv) ? sv : null;
                     var subErrors = ValidateField(subField, subValue);
-                    foreach (var e in subErrors)
-                        errors.Add($"Entry {i + 1} – {subField.Label}: {e}");
+                    if (subErrors.Count > 0) { anyEntryErrors = true; break; }
                 }
+
+                if (anyEntryErrors) break;
             }
+
+            if (anyEntryErrors)
+                errors.Add("Some entries have validation errors — please review them below.");
 
             foreach (var rule in field.ValidationRules)
             {

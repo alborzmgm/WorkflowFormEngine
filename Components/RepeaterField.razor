@@ -28,7 +28,7 @@
         @if (_entryContexts.Count == 0)
         {
             <div class="wfe-repeater-empty">
-                <i class="bi bi-inbox me-2"></i>No entries yet — click <strong>Add entry</strong> to begin.
+                <i class="bi bi-inbox me-2"></i>No @_itemLabelPlural yet — click <strong>Add @_itemLabel</strong> to begin.
             </div>
         }
         else
@@ -44,7 +44,7 @@
                     <div class="@cardCss" @key="idx">
                         <div class="wfe-repeater-card-header">
                             <span class="wfe-repeater-card-title">
-                                <i class="bi bi-list-ul me-2"></i>Entry @(idx + 1)
+                                <i class="bi bi-list-ul me-2"></i>@_itemLabelCapitalized @(idx + 1)
                                 @if (hasErrors)
                                 {
                                     <i class="bi bi-exclamation-circle-fill ms-2 text-danger"
@@ -54,11 +54,18 @@
                             <button type="button"
                                     class="btn btn-link btn-sm text-danger wfe-repeater-remove"
                                     @onclick="() => RemoveEntry(idx)"
-                                    title="Remove entry @(idx + 1)">
+                                    title="Remove @_itemLabel @(idx + 1)">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
                         <div class="wfe-repeater-card-body">
+                            @if (hasErrors)
+                            {
+                                <div class="alert alert-danger wfe-repeater-entry-alert" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    Please fix the errors in this @_itemLabel before proceeding.
+                                </div>
+                            }
                             <RepeaterSubForm Fields="@Field.SubFields"
                                              Context="@_entryContexts[idx]"
                                              ValidationErrors="@entryErrors"
@@ -72,7 +79,7 @@
         <button type="button"
                 class="btn btn-outline-primary btn-sm mt-2 wfe-repeater-add"
                 @onclick="AddEntry">
-            <i class="bi bi-plus-circle me-1"></i>Add entry
+            <i class="bi bi-plus-circle me-1"></i>Add @_itemLabel
         </button>
     }
 
@@ -98,6 +105,20 @@
     private bool _initialized     = false;
 
     private bool HasErrors => ValidationErrors.Count > 0;
+
+    // ── Item label helpers ────────────────────────────────────────────────────
+
+    private string _itemLabel =>
+        Field.ItemLabel is { Length: > 0 } lbl ? lbl.Trim() : "entry";
+
+    private string _itemLabelCapitalized =>
+        _itemLabel.Length == 0 ? string.Empty
+            : char.ToUpper(_itemLabel[0]) + _itemLabel[1..];
+
+    private string _itemLabelPlural =>
+        Field.ItemLabelPlural is { Length: > 0 } plural
+            ? plural.Trim()
+            : (_itemLabel == "entry" ? "entries" : _itemLabel + "s");
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 

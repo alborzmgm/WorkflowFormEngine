@@ -580,6 +580,13 @@ body {
     font-weight: 600;
 }
 
+.wfe-repeater-entry-alert {
+    font-size: .82rem;
+    padding: .45rem .8rem;
+    margin-bottom: .85rem;
+    border-radius: 6px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    11. SUBMISSION SUMMARY CARD
    ═══════════════════════════════════════════════════════════════════════════ */

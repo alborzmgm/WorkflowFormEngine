@@ -50,4 +50,20 @@ public sealed class FieldDefinition
     /// Ignored by all other field types.
     /// </summary>
     public List<FieldDefinition> SubFields { get; set; } = [];
+
+    /// <summary>
+    /// Singular display name for one entry in a "repeater" field (e.g. "product", "item").
+    /// Used as the button label ("Add product") and empty-state hint.
+    /// Defaults to "entry" when not set.
+    /// Ignored by all other field types.
+    /// </summary>
+    public string? ItemLabel { get; set; }
+
+    /// <summary>
+    /// Plural form of <see cref="ItemLabel"/> (e.g. "products", "items").
+    /// Shown in the empty-state hint ("No products yet").
+    /// When not set, falls back to <see cref="ItemLabel"/> + "s" (or "entries" when ItemLabel is absent).
+    /// Ignored by all other field types.
+    /// </summary>
+    public string? ItemLabelPlural { get; set; }
 }
