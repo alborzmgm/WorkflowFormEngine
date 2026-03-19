@@ -37,13 +37,6 @@ public sealed class FieldDefinition
     public int Rows { get; set; } = 4;
 
     /// <summary>
-    /// Column definitions for "repeatablelist" field type.
-    /// Each entry describes one sub-field that the user fills in per row.
-    /// Ignored by all other field types.
-    /// </summary>
-    public List<ColumnDefinition> Columns { get; set; } = [];
-
-    /// <summary>
     /// Sub-field definitions for the "repeater" field type.
     /// Each entry is a full <see cref="FieldDefinition"/> — every field type,
     /// validation rule, and visibility condition is supported within an entry.

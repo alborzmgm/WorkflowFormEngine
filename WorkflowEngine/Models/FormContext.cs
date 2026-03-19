@@ -20,8 +20,7 @@ public sealed class FormContext
 
     /// <summary>
     /// Returns true when the key exists and has a meaningful value.
-    /// Handles scalar values, List&lt;string&gt; (CheckboxListField),
-    /// List&lt;Dictionary&lt;string, string&gt;&gt; (RepeatableListField), and
+    /// Handles scalar values, List&lt;string&gt; (CheckboxListField), and
     /// List&lt;Dictionary&lt;string, object?&gt;&gt; (RepeaterField).
     /// </summary>
     public bool HasValue(string key)
@@ -33,10 +32,6 @@ public sealed class FormContext
         if (val is List<string> list)
             return list.Count > 0;
 
-        // Repeatable list stores rows as List<Dictionary<string, string>>
-        if (val is List<Dictionary<string, string>> rows)
-            return rows.Any(r => IsRepeatableListRowNonEmpty(r));
-
         // Repeater field stores entries as List<Dictionary<string, object?>>
         if (val is List<Dictionary<string, object?>> entries)
             return entries.Count > 0;
@@ -45,13 +40,4 @@ public sealed class FormContext
     }
 
     public IReadOnlyDictionary<string, object?> AllValues => _values;
-
-    /// <summary>
-    /// Returns true when a repeatable-list row contains at least one non-empty cell.
-    /// Used by <see cref="HasValue"/>, <see cref="WorkflowEngine.ConditionEvaluator"/>,
-    /// <see cref="Services.ValidationService"/>, and the RepeatableListField component
-    /// so that the definition of "non-empty row" is identical everywhere.
-    /// </summary>
-    public static bool IsRepeatableListRowNonEmpty(IReadOnlyDictionary<string, string> row) =>
-        row.Values.Any(v => !string.IsNullOrWhiteSpace(v));
 }

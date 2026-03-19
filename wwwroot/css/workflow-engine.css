@@ -422,88 +422,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   9. REPEATABLE LIST FIELD
-   ═══════════════════════════════════════════════════════════════════════════ */
-.wfe-repeatable-table {
-    font-size: .88rem;
-    margin-bottom: .65rem;
-}
-
-.wfe-repeatable-table thead th {
-    font-size: .78rem;
-    font-weight: 700;
-    color: #64748b;
-    border-bottom: 2px solid #e2e8f0;
-    padding: .4rem .6rem;
-    white-space: nowrap;
-}
-
-.wfe-repeatable-table tbody td {
-    padding: .35rem .5rem;
-    vertical-align: middle;
-}
-
-.wfe-repeatable-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.wfe-repeatable-remove {
-    padding: .2rem .45rem;
-    line-height: 1;
-}
-
-.wfe-repeatable-add {
-    font-size: .82rem;
-    font-weight: 600;
-}
-
-/* ── Summary rows for repeatablelist values ──────────────────────────────── */
-.wfe-summary-rows {
-    display: flex;
-    flex-direction: column;
-    gap: .3rem;
-}
-
-.wfe-summary-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    padding: .3rem .55rem;
-    background: #f8fafc;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-    font-size: .85rem;
-}
-
-.wfe-summary-entry-header {
-    width: 100%;
-    font-size: .75rem;
-    font-weight: 700;
-    color: #1a56db;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    padding-bottom: .2rem;
-    border-bottom: 1px solid #e2e8f0;
-    margin-bottom: .2rem;
-}
-
-.wfe-summary-cell {
-    display: inline-flex;
-    gap: .25rem;
-}
-
-.wfe-summary-cell-key {
-    color: #64748b;
-    font-weight: 600;
-}
-
-.wfe-summary-cell-val {
-    color: #1e293b;
-    font-weight: 500;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   10. REPEATER FIELD — card-per-entry form
+   9. REPEATER FIELD — card-per-entry form
    ═══════════════════════════════════════════════════════════════════════════ */
 .wfe-repeater-empty {
     padding: 1rem 1.25rem;
@@ -588,7 +507,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   11. SUBMISSION SUMMARY CARD
+   10. SUBMISSION SUMMARY CARD
    ═══════════════════════════════════════════════════════════════════════════ */
 .wfe-summary-card {
     border: none;
@@ -608,4 +527,49 @@ body {
     color: #64748b;
     width: 38%;
     font-size: .875rem;
+}
+
+/* ── Summary rows for repeater entry values ──────────────────────────────── */
+.wfe-summary-rows {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+
+.wfe-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding: .3rem .55rem;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    font-size: .85rem;
+}
+
+.wfe-summary-entry-header {
+    width: 100%;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #1a56db;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding-bottom: .2rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: .2rem;
+}
+
+.wfe-summary-cell {
+    display: inline-flex;
+    gap: .25rem;
+}
+
+.wfe-summary-cell-key {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.wfe-summary-cell-val {
+    color: #1e293b;
+    font-weight: 500;
 }

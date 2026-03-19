@@ -48,7 +48,6 @@
         "number"         => typeof(NumberField),
         "select"         => typeof(SelectField),
         "checkboxlist"   => typeof(CheckboxListField),
-        "repeatablelist" => typeof(RepeatableListField),
         "repeater"       => typeof(RepeaterField),
         _ => throw new NotSupportedException($"Unknown fieldType '{fieldType}'.")
     };
@@ -56,7 +55,7 @@
     /// <summary>
     /// Returns Bootstrap column classes for a sub-field.
     /// Simple scalar fields (text, number, select) share a row two-across on ≥md screens.
-    /// Complex / tall fields (textarea, checkboxlist, repeatablelist, repeater) take the full row.
+    /// Complex / tall fields (textarea, checkboxlist, repeater) take the full row.
     /// </summary>
     private static string ColClass(string fieldType) => fieldType switch
     {
