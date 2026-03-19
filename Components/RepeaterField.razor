@@ -78,6 +78,8 @@
 
         <button type="button"
                 class="btn btn-outline-primary btn-sm mt-2 wfe-repeater-add"
+                disabled="@(_entryErrors.Count > 0)"
+                title="@(_entryErrors.Count > 0 ? $"Fix the errors in existing {_itemLabelPlural} before adding a new one." : null)"
                 @onclick="AddEntry">
             <i class="bi bi-plus-circle me-1"></i>Add @_itemLabel
         </button>
