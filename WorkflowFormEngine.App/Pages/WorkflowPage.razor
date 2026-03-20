@@ -88,7 +88,7 @@ else
                 <div class="row justify-content-start">
                     <div class="col-12 col-xl-10">
                         <DynamicForm @ref="_form"
-                                     Step="@CurrentStep"
+                                     Fields="@CurrentStep.Fields"
                                      Context="@_ctx"
                                      ValidationErrors="@_errors"
                                      OnContextChanged="OnContextChanged" />

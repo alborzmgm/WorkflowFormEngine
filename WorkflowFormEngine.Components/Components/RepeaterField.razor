@@ -63,10 +63,11 @@
                                     Please fix the errors in this @_itemLabel before proceeding.
                                 </div>
                             }
-                            <RepeaterSubForm Fields="@Field.SubFields"
-                                             Context="@_entryContexts[idx]"
-                                             ValidationErrors="@entryErrors"
-                                             OnContextChanged="@(EventCallback.Factory.Create(this, () => OnEntryChanged(idx)))" />
+                            <DynamicForm Fields="@Field.SubFields"
+                                         Context="@_entryContexts[idx]"
+                                         UseColumnLayout="true"
+                                         ValidationErrors="@entryErrors"
+                                         OnContextChanged="@(EventCallback.Factory.Create(this, () => OnEntryChanged(idx)))" />
                         </div>
                     </div>
                 }
