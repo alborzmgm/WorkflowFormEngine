@@ -1,0 +1,279 @@
+@page "/workflow"
+@rendermode InteractiveServer
+
+@inject WorkflowLoader    WorkflowLoader
+@inject ValidationService ValidationService
+
+<PageTitle>@(_workflow?.Name ?? "Loading…")</PageTitle>
+
+@if (_workflow is null)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height:100vh">
+        <div class="text-center text-muted">
+            <div class="spinner-border text-primary mb-3" role="status" style="width:2.5rem;height:2.5rem">
+                <span class="visually-hidden">Loading…</span>
+            </div>
+            <p class="mb-0 fw-medium">Loading workflow…</p>
+        </div>
+    </div>
+}
+else
+{
+    <!-- ── Navbar ──────────────────────────────────────────────────────── -->
+    <nav class="navbar wfe-navbar">
+        <div class="container">
+            <span class="navbar-brand text-white">
+                <i class="bi bi-ui-checks-grid me-2"></i>@_workflow.Name
+            </span>
+            <span class="wfe-step-counter">
+                Step @(_currentStepIndex + 1) of @_workflow.Steps.Count
+            </span>
+        </div>
+    </nav>
+
+    <div class="container py-4" style="max-width:760px">
+
+        <!-- ── Step progress ─────────────────────────────────────────── -->
+        <div class="wfe-stepper">
+            <div class="wfe-stepper-track"></div>
+            @for (int i = 0; i < _workflow.Steps.Count; i++)
+            {
+                var idx  = i;
+                var step = _workflow.Steps[i];
+                var css  = idx < _currentStepIndex  ? "wfe-stepper-item wfe-stepper-item--done"
+                         : idx == _currentStepIndex ? "wfe-stepper-item wfe-stepper-item--active"
+                         :                            "wfe-stepper-item";
+
+                <div class="@css">
+                    <div class="wfe-stepper-circle">
+                        @if (idx < _currentStepIndex)
+                        { <i class="bi bi-check-lg"></i> }
+                        else
+                        { @(idx + 1) }
+                    </div>
+                    <div class="wfe-stepper-label">@step.Title</div>
+                </div>
+            }
+        </div>
+
+        <!-- ── Validation alert ──────────────────────────────────────── -->
+        @if (_errors.Count > 0)
+        {
+            <div class="alert alert-danger d-flex gap-3 align-items-start mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1"></i>
+                <div>
+                    <div class="fw-semibold mb-1">Please fix the following before continuing:</div>
+                    <ul class="mb-0 ps-3">
+                        @foreach (var kv in _errors)
+                            @foreach (var msg in kv.Value)
+                            { <li>@msg</li> }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        <!-- ── Form card ─────────────────────────────────────────────── -->
+        <div class="wfe-card">
+            <div class="wfe-card-header">
+                <div class="wfe-card-header-icon">
+                    <i class="bi @CurrentStep.Icon"></i>
+                </div>
+                <div>
+                    <h5>@CurrentStep.Title</h5>
+                    <p class="wfe-step-subtitle">@CurrentStep.Description</p>
+                </div>
+            </div>
+
+            <div class="wfe-card-body">
+                <div class="row justify-content-start">
+                    <div class="col-12 col-xl-10">
+                        <DynamicForm @ref="_form"
+                                     Fields="@CurrentStep.Fields"
+                                     Context="@_ctx"
+                                     ValidationErrors="@_errors"
+                                     OnContextChanged="OnContextChanged" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="wfe-card-footer">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <div>
+                        @if (_currentStepIndex > 0)
+                        {
+                            <button class="btn btn-outline-secondary" @onclick="Back">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </button>
+                        }
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-muted" style="font-size:.82rem">
+                            @VisibleFieldCount field(s) on this step
+                        </span>
+                        @if (_currentStepIndex < _workflow.Steps.Count - 1)
+                        {
+                            <button class="btn btn-primary" @onclick="Next">
+                                Next<i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-success" @onclick="Submit">
+                                <i class="bi bi-check-circle me-2"></i>Submit
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Submission success ─────────────────────────────────────── -->
+        @if (_submitted)
+        {
+            <div class="wfe-summary-card mt-4">
+                <div class="wfe-summary-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle-fill me-2"></i>Submission Successful
+                    </h5>
+                    <div style="font-size:.85rem; opacity:.85; margin-top:.25rem">
+                        All fields collected and ready to submit to your backend.
+                    </div>
+                </div>
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="wfe-summary-label ps-4">Field</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var kv in _ctx.AllValues)
+                        {
+                            <tr>
+                                <td class="wfe-summary-label ps-4">@kv.Key</td>
+                                <td>
+                                    @if (kv.Value is List<string> items && items.Count > 0)
+                                    {
+                                        @foreach (var item in items)
+                                        {
+                                            <span class="badge bg-primary me-1 mb-1">@item</span>
+                                        }
+                                    }
+                                    else if (kv.Value is List<Dictionary<string, object?>> entries && entries.Count > 0)
+                                    {
+                                        <div class="wfe-summary-rows">
+                                            @for (int ei = 0; ei < entries.Count; ei++)
+                                            {
+                                                var entryNum = ei + 1;
+                                                <div class="wfe-summary-row">
+                                                    <div class="wfe-summary-entry-header">@GetItemLabelCapitalized(kv.Key) @entryNum</div>
+                                                    @foreach (var cell in entries[ei])
+                                                    {
+                                                        @if (cell.Value is not null &&
+                                                             !(cell.Value is string sv && string.IsNullOrWhiteSpace(sv)))
+                                                        {
+                                                            <span class="wfe-summary-cell">
+                                                                <span class="wfe-summary-cell-key">@cell.Key:</span>
+                                                                <span class="wfe-summary-cell-val">
+                                                                    @if (cell.Value is List<string> subItems)
+                                                                    {
+                                                                        @string.Join(", ", subItems)
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        @cell.Value?.ToString()
+                                                                    }
+                                                                </span>
+                                                            </span>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-medium">@(kv.Value?.ToString() ?? "—")</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="d-flex justify-content-end p-3 bg-light border-top">
+                    <button class="btn btn-outline-secondary btn-sm"
+                            @onclick="() => _submitted = false">
+                        <i class="bi bi-x me-1"></i>Close
+                    </button>
+                </div>
+            </div>
+        }
+
+    </div>
+}
+
+@code {
+    private WorkflowDefinition? _workflow;
+    private FormContext          _ctx              = new();
+    private int                  _currentStepIndex = 0;
+    private bool                 _submitted        = false;
+    private DynamicForm?         _form;
+
+    private IReadOnlyDictionary<string, IReadOnlyList<string>> _errors =
+        new Dictionary<string, IReadOnlyList<string>>();
+
+    private StepDefinition CurrentStep => _workflow!.Steps[_currentStepIndex];
+
+    private int VisibleFieldCount =>
+        _form?.GetVisibleFieldKeys().Count() ?? CurrentStep.Fields.Count;
+
+    protected override async Task OnInitializedAsync() =>
+        _workflow = await WorkflowLoader.LoadAsync("location-workflow.json");
+
+    private void OnContextChanged()
+    {
+        if (_errors.Count > 0) RunValidation();
+        StateHasChanged();
+    }
+
+    private void Next()
+    {
+        if (!RunValidation()) return;
+        _currentStepIndex++;
+        _errors = new Dictionary<string, IReadOnlyList<string>>();
+    }
+
+    private void Back()
+    {
+        if (_currentStepIndex > 0)
+        {
+            _currentStepIndex--;
+            _errors = new Dictionary<string, IReadOnlyList<string>>();
+        }
+    }
+
+    private async Task Submit()
+    {
+        if (!RunValidation()) return;
+        _submitted = true;
+        await Task.CompletedTask;
+    }
+
+    private bool RunValidation()
+    {
+        var visible = _form?.GetVisibleFieldKeys()
+                     ?? CurrentStep.Fields.Select(f => f.Key);
+        _errors = ValidationService.ValidateStep(CurrentStep, _ctx, visible);
+        return _errors.Count == 0;
+    }
+
+    private string GetItemLabelCapitalized(string fieldKey)
+    {
+        var field = _workflow?.Steps
+            .SelectMany(s => s.Fields)
+            .FirstOrDefault(f => string.Equals(f.Key, fieldKey, StringComparison.OrdinalIgnoreCase));
+
+        var label = field?.ItemLabel is { Length: > 0 } lbl ? lbl.Trim() : "entry";
+        return char.ToUpper(label[0]) + label[1..];
+    }
+}
