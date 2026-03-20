@@ -1,4 +1,4 @@
-# WorkflowFormEngine — v7 (.NET 10 + Blazor Server + Bootstrap 5)
+# FormFlow — v7 (.NET 10 + Blazor Server + Bootstrap 5)
 
 ## What's New in v7 — Repeater Field & Cleanup
 
@@ -43,7 +43,7 @@
 | **`DynamicForm.Resolve()`** | Added `"checkboxlist" => CheckboxListField` |
 | **`location-workflow.json`** | Added `Interests` (checkboxlist, country-dependent, max 4) and `PreferredContactMethods` (checkboxlist, required, min 1, max 3) |
 | **`WorkflowPage` summary** | List values render as Bootstrap `badge` pills instead of raw `ToString()` |
-| **`workflow-engine.css`** | Added `.checkbox-list-scroll` and `.form-check--selected` |
+| **`form-flow.css`** | Added `.checkbox-list-scroll` and `.form-check--selected` |
 
 ---
 
@@ -118,7 +118,7 @@ receives the new `FormContext` and returns country-filtered options.
 ## Quick Start
 
 ```bash
-cd WorkflowFormEngine
+cd FormFlow
 dotnet run
 ```
 Navigate to `https://localhost:5001/workflow`
@@ -167,7 +167,7 @@ Navigate to `https://localhost:5001/workflow`
 ## Project Structure
 
 ```
-WorkflowFormEngine/
+FormFlow/
 ├── WorkflowEngine/Models/     FieldDefinition (+ Rows, SubFields, ItemLabel), StepDefinition (+ Description, Icon),
 │                              ValidationRule, ConditionRule, FormContext (list/repeater-aware)
 ├── WorkflowEngine/            DependencyGraph, ConditionEvaluator (list/repeater-aware), WorkflowLoader
@@ -199,10 +199,10 @@ WorkflowFormEngine/
 ├── Pages/
 │   └── WorkflowPage.razor
 ├── wwwroot/
-│   ├── css/workflow-engine.css
+│   ├── css/form-flow.css
 │   └── workflows/location-workflow.json
 ├── _Imports.razor
 ├── Program.cs
-└── WorkflowFormEngine.csproj       net10.0
+└── FormFlow.csproj       net10.0
 ```
 
